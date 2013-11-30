@@ -8,7 +8,7 @@ This README will get updated as the project progresses.
 
 # STATUS
 
-WORK IN PROGRESS - UNDER ACTIVE DEVELOPMENT
+WORK IN PROGRESS - Under more or less passive development
 
 # SUPPORTED PRODUCTS
 
