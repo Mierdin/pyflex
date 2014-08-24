@@ -1,11 +1,9 @@
-py-datacenter-toolkit
+pyflex
 ==============
 
 # ABOUT
 
-A suite of scripts aimed at automating nearly every aspect of the provisioning process in various data center components. Starting with the equipment found in a Flexpod, but moving outside once mastered.
-
-This project is just getting kicked off - I have a lot of ideas on this project and welcome yours as well. 
+A framework for deploying and otherwise configuring a Flexpod. 
 
 This README will get updated as the project progresses.
 
