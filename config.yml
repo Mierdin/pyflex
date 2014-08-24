@@ -23,28 +23,32 @@ sections:
 #
 # Enter authentication information here
 auth:
-	ucs:
-		host: 10.12.0.78
-		username: admin
-		password: cisco
-	netapp:
-		host: 10.12.0.70
-		username: admin
-		password: netapp
-	nexusa:
-		host: 10.12.0.100
-		username: admin
-		password: cisco
-	nexusb:
-		host: 10.12.0.101
-		username: admin
-		password: cisco
+    ucs:
+        host: 10.12.0.78
+        username: admin
+        password: cisco
+    netapp:
+        host: 10.12.0.70
+        username: admin
+        password: netapp
+    nexusa:
+        host: 10.12.0.100
+        username: admin
+        password: cisco
+    nexusb:
+        host: 10.12.0.101
+        username: admin
+        password: cisco
+    vcenter:
+        host: 10.12.0.15
+        username: DOMAIN\admin
+        password: vmware
 
 # General
 #
 # Define general configuration options hee
 general:
-	org: ORG_TEST #Define org name here, or if no suborg, write "root"
+    org: ORG_TEST #Define org name here, or if no suborg, write "root"
     mgmtgw: 10.1.1.1
     ntp: 
         - 192.168.11.10
@@ -61,17 +65,17 @@ general:
 # the corresponding value.
 vlans:
     mgmt:
-	    240: ESX_MGMT_10.1.40.0/24
-	storage:
-	    235: FCoE_Fabric_A
-	    236: FCoE_Fabric_B
+        240: ESX_MGMT_10.1.40.0/24
+    storage:
+        235: FCoE_Fabric_A
+        236: FCoE_Fabric_B
     prod:
-	    109: Core_Services_10.1.9.0/24
-	    232: 1000v-Control_10.1.32.0/23
-	    234: CIFS_10.1.34.0/24
-	    241: vMotion_10.1.41.0/24
-	    249: Corporate-VMs_10.1.49.0/24
-	    260: NFS_10.1.160.0/20
+        109: Core_Services_10.1.9.0/24
+        232: 1000v-Control_10.1.32.0/23
+        234: CIFS_10.1.34.0/24
+        241: vMotion_10.1.41.0/24
+        249: Corporate-VMs_10.1.49.0/24
+        260: NFS_10.1.160.0/20
 
 # QOS
 #
@@ -90,3 +94,12 @@ ports:
     trunks:
         "e1/1-48"
         #TODO: need to make this not a simple string - probably a list
+
+# STORAGE
+#
+# Storage configuration
+storage: #revisit this - might not need to expose all of these
+    var_na_portset: fcoe_pset_1
+    var_na_vserver: FC_VS1
+    var_na_vserverRootVol: = FC_VS1_root
+    var_na_bootVol: /vol/FC_BootVol1/ #Needs to be of this format, including the forward slashes. LUN will be appended without any slashes
