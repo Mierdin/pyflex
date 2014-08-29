@@ -3,7 +3,7 @@
 
 """
 
-class BaseWorker:
+class FlexWorker:
 
     def __init__(self, config):
         

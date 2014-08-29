@@ -2,22 +2,26 @@
 """ UCS worker class for pyflex
 
 """
-from worker import BaseWorker
+from worker import FlexWorker
 from functions.functions_ucs import UcsFunctions
 from UcsSdk import *
 
-class UcsWorker(BaseWorker):
+class UcsWorker(FlexWorker):
 
     def startworker(self):
 
         #Connect to UCSM
         handle = UcsHandle()
+
+        ucsauth = self.config['auth']['ucs']
+
         handle.Login(
-            self.config['auth']['ucs']['host'], 
-            self.config['auth']['ucs']['user'], 
-            self.config['auth']['ucs']['pass']
+            ucsauth['host'], 
+            ucsauth['user'], 
+            ucsauth['pass']
         )
 
         fxns = UcsFunctions(handle, self.config)
+        fxns.ucsHousekeeping()
 
         #DEFINE REST OF UCS WORKFLOW HERE
