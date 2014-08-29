@@ -55,15 +55,29 @@ class UcsFunctions:
 
         #TODO: at this point, ext-mgmt is still empty. Consider implementing this here, or even better, in another method.
 
-    def createVLANSandVSANS(handle):
-        obj = handle.GetManagedObject(None, FabricLanCloud.ClassId(), {FabricLanCloud.DN:"fabric/lan"})
-        handle.AddManagedObject(obj, FabricVlan.ClassId(), {FabricVlan.COMPRESSION_TYPE:"included", FabricVlan.DN:"fabric/lan/net-VLAN_10", FabricVlan.SHARING:"none", FabricVlan.PUB_NW_NAME:"", "policyOwner":"local", FabricVlan.ID:"10", FabricVlan.MCAST_POLICY_NAME:"", FabricVlan.NAME:"VLAN_10", FabricVlan.DEFAULT_NET:"no"})
+    def createVLANSandVSANS(self):
+        obj = self.handle.GetManagedObject(None, None, {"Dn":"fabric/lan"})
+        
+        vlans = self.ucsconfig['vlans']
 
-        obj = handle.GetManagedObject(None, None, {"dn":"fabric/san/A"})
-        handle.AddManagedObject(obj, FabricVsan.ClassId(), {FabricVsan.DN:"fabric/san/A/", FabricVsan.ID:"100", "policyOwner":"local", FabricVsan.ZONING_STATE:"disabled", FabricVsan.FCOE_VLAN:"100", FabricVsan.FC_ZONE_SHARING_MODE:"coalesce", FabricVsan.NAME:"VSAN_100"})
+        for group in vlans:
+            if group != 'storage': #Don't want to explicitly add FCoE VLANs here, that's done in the VSAN creation
+                for vlanid, vlanname in vlans[group].iteritems():
+                    try:
+                        self.handle.AddManagedObject(obj, "fabricVlan", {"Name":vlanname, "PubNwName":"", "DefaultNet":"no", "PolicyOwner":"local", "CompressionType":"included", "Dn":"fabric/lan/net-" + vlanname, "McastPolicyName":"", "Id":str(vlanid), "Sharing":"none"})
+                    except UcsException:
+                        print "Already exists" #convert to logging and TODO: need to handle this better. Need to poke around at the possible exception types
 
-        obj = handle.GetManagedObject(None, FabricSanCloud.ClassId(), {FabricSanCloud.DN:"fabric/san"})
-        handle.AddManagedObject(obj, FabricVsan.ClassId(), {FabricVsan.DN:"fabric/san/B/", FabricVsan.ID:"200", "policyOwner":"local", FabricVsan.ZONING_STATE:"disabled", FabricVsan.FCOE_VLAN:"200", FabricVsan.FC_ZONE_SHARING_MODE:"coalesce", FabricVsan.NAME:"VSAN_200"})
+        vsans = self.ucsconfig['vsans']
+
+        for fabric in vsans:
+            obj = self.handle.GetManagedObject(None, None, {"Dn":"fabric/san/" + fabric.upper()})
+            for vsanid, vsanname in vsans[fabric].iteritems():
+                try:
+                    self.handle.AddManagedObject(obj, "fabricVsan", {"Name":vsanname, "ZoningState":"disabled", "PolicyOwner":"local", "FcZoneSharingMode":"coalesce", "FcoeVlan":str(vsanid), "Dn":"fabric/san/" + fabric.upper() + "/", "Id":str(vsanid)})
+                except UcsException:
+                    print "Already exists" #convert to logging and TODO: need to handle this better. Need to poke around at the possible exception types
+                    
 
     def createUCSPools(handle):
         handle.StartTransaction()
