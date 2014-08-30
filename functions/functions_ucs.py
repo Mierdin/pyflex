@@ -6,7 +6,7 @@ class UcsFunctions:
     def __init__(self, handle, ucsconfig):
         
         self.handle = handle
-        self.ucsconfig = ucsconfig
+        self.ucsconfig = ucsconfig #TODO: ucsconfig is currently just the entire config. Need to organize the config so that it's a little more pruned.
 
         self.orgName = self.ucsconfig['general']['org']
 
@@ -107,14 +107,11 @@ class UcsFunctions:
 
 
 
-    def ucsCreatePolicies(handle):
+    def ucsCreatePolicies(self):
         #Create/set global policies
-        handle.StartTransaction()
-        obj = handle.GetManagedObject(None, OrgOrg.ClassId(), {OrgOrg.DN:"org-root"})
-        handle.AddManagedObject(obj, ComputePsuPolicy.ClassId(), {ComputePsuPolicy.POLICY_OWNER:"local", ComputePsuPolicy.REDUNDANCY:"grid", ComputePsuPolicy.DESCR:"", ComputePsuPolicy.DN:"org-root/psu-policy"}, True)
-        obj = handle.GetManagedObject(None, OrgOrg.ClassId(), {OrgOrg.DN:"org-root"})
-        handle.AddManagedObject(obj, ComputeChassisDiscPolicy.ClassId(), {ComputeChassisDiscPolicy.REBALANCE:"user-acknowledged", ComputeChassisDiscPolicy.DN:"org-root/chassis-discovery", ComputeChassisDiscPolicy.ACTION:"4-link", ComputeChassisDiscPolicy.LINK_AGGREGATION_PREF:"port-channel", ComputeChassisDiscPolicy.POLICY_OWNER:"local", ComputeChassisDiscPolicy.NAME:"", ComputeChassisDiscPolicy.DESCR:""}, True)
-        handle.CompleteTransaction()
+        self.handle.AddManagedObject(self.rootorg, "computePsuPolicy", {"PolicyOwner":"local", "Redundancy":"grid", "Dn":"org-root/psu-policy", "Descr":""}, True)
+        self.handle.AddManagedObject(self.rootorg, "computeChassisDiscPolicy", {"Descr":"", "PolicyOwner":"local", "LinkAggregationPref":"port-channel", "Action":str(self.ucsconfig['ucs']['links']), "Name":"", "Rebalance":"user-acknowledged", "Dn":"org-root/chassis-discovery"}, True)
+        #platform-max is the last option.
 
         #Global QoS policy
         handle.StartTransaction()
