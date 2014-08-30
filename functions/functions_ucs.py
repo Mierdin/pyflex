@@ -10,11 +10,15 @@ class UcsFunctions:
 
         self.orgName = self.ucsconfig['general']['org']
 
-        if self.orgName != "root":
-            self.org = handle.GetManagedObject(None, OrgOrg.ClassId(), {OrgOrg.DN : "org-root/org-" + self.orgName})
+        if self.orgName == "root":
+            self.orgNameDN = "org-root/"
+            self.org = handle.GetManagedObject(None, OrgOrg.ClassId(), {OrgOrg.DN : self.orgNameDN})
+        else:
+            self.orgNameDN = "org-root/org-" + self.orgName + "/"
+            self.org = handle.GetManagedObject(None, OrgOrg.ClassId(), {OrgOrg.DN : self.orgNameDN})
 
         #Even if self.org is the root org, it's nice to have a separate one for root, that we can use for things that should always refer to root. I.e. the default resource pools
-        self.rootorg = handle.GetManagedObject(None, OrgOrg.ClassId(), {OrgOrg.DN : "org-root"})
+        self.rootorg = handle.GetManagedObject(None, OrgOrg.ClassId(), {OrgOrg.DN : "org-root/"})
 
     def ucsHousekeeping(self):
 
@@ -27,10 +31,14 @@ class UcsFunctions:
 
         #Add suborg if needed
         if len(self.org) == 0 and self.orgName != "root" :
-            self.handle.AddManagedObject(self.rootorg, OrgOrg.ClassId(), {OrgOrg.DESCR:self.orgName, OrgOrg.NAME:self.orgName, OrgOrg.DN:"org-root/org-" + self.orgName})
-            self.org = self.handle.GetManagedObject(None, OrgOrg.ClassId(), {OrgOrg.DN : "org-root/org-" + self.orgName})
+            try:
+                self.handle.AddManagedObject(self.rootorg, OrgOrg.ClassId(), {OrgOrg.DESCR:self.orgName, OrgOrg.NAME:self.orgName, OrgOrg.DN:"org-root/org-" + self.orgName})
+            except UcsException:
+                print "Already exists" #convert to logging and TODO: need to handle this better. Need to poke around at the possible exception types
+
+            self.org = self.handle.GetManagedObject(None, OrgOrg.ClassId(), {OrgOrg.DN : self.orgNameDN})
         elif self.orgName == "root":
-            self.org = self.handle.GetManagedObject(None, OrgOrg.ClassId(), {OrgOrg.DN : "org-root"})
+            self.org = self.handle.GetManagedObject(None, OrgOrg.ClassId(), {OrgOrg.DN : "org-root/"})
         else:
             pass #In any other case, the org already exists, and is set correctly via this module's __init__ method
         
@@ -77,35 +85,27 @@ class UcsFunctions:
                     self.handle.AddManagedObject(obj, "fabricVsan", {"Name":vsanname, "ZoningState":"disabled", "PolicyOwner":"local", "FcZoneSharingMode":"coalesce", "FcoeVlan":str(vsanid), "Dn":"fabric/san/" + fabric.upper() + "/", "Id":str(vsanid)})
                 except UcsException:
                     print "Already exists" #convert to logging and TODO: need to handle this better. Need to poke around at the possible exception types
-                    
 
-    def createUCSPools(handle):
-        handle.StartTransaction()
-        obj = handle.GetManagedObject(None, OrgOrg.ClassId(), {OrgOrg.DN:"org-root/org-DI_DCA"})
-        mo = handle.AddManagedObject(obj, MacpoolPool.ClassId(), {MacpoolPool.NAME:"ESX-MAC-A", MacpoolPool.POLICY_OWNER:"local", MacpoolPool.DESCR:"MAC addresses for ESXi Hosts in Fabric A", MacpoolPool.DN:"org-root/org-DI_DCA/mac-pool-ESX-MAC-A", MacpoolPool.ASSIGNMENT_ORDER:"sequential"})
-        mo_1 = handle.AddManagedObject(mo, MacpoolBlock.ClassId(), {MacpoolBlock.FROM:"00:25:B5:00:00:00", MacpoolBlock.TO:"00:25:B5:00:00:FF", MacpoolBlock.DN:"org-root/org-DI_DCA/mac-pool-ESX-MAC-A/block-00:25:B5:00:00:00-00:25:B5:00:00:FF"})
-        handle.CompleteTransaction()
 
-        handle.StartTransaction()
-        obj = handle.GetManagedObject(None, OrgOrg.ClassId(), {OrgOrg.DN:"org-root"})
-        mo = handle.AddManagedObject(obj, FcpoolInitiators.ClassId(), {FcpoolInitiators.DN:"org-root/wwn-pool-ESXi-WWNN-POOL", FcpoolInitiators.ASSIGNMENT_ORDER:"sequential", FcpoolInitiators.PURPOSE:"node-wwn-assignment", FcpoolInitiators.POLICY_OWNER:"local", FcpoolInitiators.DESCR:"ESXi WWNN Pool", FcpoolInitiators.NAME:"ESXi-WWNN-POOL"})
-        mo_1 = handle.AddManagedObject(mo, FcpoolBlock.ClassId(), {FcpoolBlock.FROM:"20:00:00:25:B5:00:00:00", FcpoolBlock.DN:"org-root/wwn-pool-ESXi-WWNN-POOL/block-20:00:00:25:B5:00:00:00-20:00:00:25:B5:00:00:FF", FcpoolBlock.TO:"20:00:00:25:B5:00:00:FF"})
-        handle.CompleteTransaction()
+    def createUCSPools(self):
 
-        handle.StartTransaction()
-        obj = handle.GetManagedObject(None, OrgOrg.ClassId(), {OrgOrg.DN:"org-root"})
-        mo = handle.AddManagedObject(obj, FcpoolInitiators.ClassId(), {FcpoolInitiators.DN:"org-root/wwn-pool-ESX-WWPN-A", FcpoolInitiators.ASSIGNMENT_ORDER:"sequential", FcpoolInitiators.PURPOSE:"port-wwn-assignment", FcpoolInitiators.POLICY_OWNER:"local", FcpoolInitiators.DESCR:"ESXi WWPN Pool Fabric A", FcpoolInitiators.NAME:"ESX-WWPN-A"})
-        mo_1 = handle.AddManagedObject(mo, FcpoolBlock.ClassId(), {FcpoolBlock.FROM:"20:00:00:25:B5:02:10:00", FcpoolBlock.DN:"org-root/wwn-pool-ESX-WWPN-A/block-20:00:00:25:B5:02:10:00-20:00:00:25:B5:02:10:FF", FcpoolBlock.TO:"20:00:00:25:B5:02:10:FF"})
-        handle.CompleteTransaction()
+        pools = self.ucsconfig['ucs']['pools']
 
-        obj = handle.GetManagedObject(None, OrgOrg.ClassId(), {OrgOrg.DN:"org-root/org-DI_DCA"})
-        handle.AddManagedObject(obj, ComputePool.ClassId(), {ComputePool.NAME:"main-server-pool", ComputePool.POLICY_OWNER:"local", ComputePool.DESCR:"main server pool", ComputePool.DN:"org-root/org-DI_DCA/compute-pool-main-server-pool"})
+        for fabric in pools['mac']: #TODO: This loop is here for the future, but obviously since the name is statically set, this only works with a single pool per fabric, currently.
+            mo = self.handle.AddManagedObject(self.org, "macpoolPool", {"Descr":"ESXi Servers Fabric " + fabric, "Name":"ESXi-MAC-" + fabric, "AssignmentOrder":"sequential", "PolicyOwner":"local", "Dn":self.orgNameDN + "mac-pool-" + "ESXi-MAC-" + fabric})
+            mo_1 = self.handle.AddManagedObject(mo, "macpoolBlock", {"From":pools['mac'][fabric]['blockbegin'], "To":pools['mac'][fabric]['blockend'], "Dn":self.orgNameDN + "mac-pool-ESXi-MAC-" + fabric + "/block-" + pools['mac'][fabric]['blockbegin'] + "-"  + pools['mac'][fabric]['blockend']})
 
-        handle.StartTransaction()
-        obj = handle.GetManagedObject(None, OrgOrg.ClassId(), {OrgOrg.DN:"org-root"})
-        mo = handle.AddManagedObject(obj, UuidpoolPool.ClassId(), {UuidpoolPool.NAME:"main-uuid-pool", UuidpoolPool.DESCR:"main uuid pool", UuidpoolPool.PREFIX:"derived", UuidpoolPool.DN:"org-root/uuid-pool-main-uuid-pool", UuidpoolPool.ASSIGNMENT_ORDER:"sequential", UuidpoolPool.POLICY_OWNER:"local"})
-        mo_1 = handle.AddManagedObject(mo, UuidpoolBlock.ClassId(), {UuidpoolBlock.FROM:"0000-000000000001", UuidpoolBlock.TO:"0000-000000000100", UuidpoolBlock.DN:"org-root/uuid-pool-main-uuid-pool/block-from-0000-000000000001-to-0000-000000000100"})
-        handle.CompleteTransaction()
+        for fabric in pools['wwpn']:
+            mo = self.handle.AddManagedObject(self.org, "fcpoolInitiators", {"Descr":"ESXi Servers Fabric " + fabric, "Name":"ESXi-WWPN-" + fabric, "Purpose":"port-wwn-assignment", "PolicyOwner":"local", "AssignmentOrder":"sequential", "Dn":self.orgNameDN + "wwn-pool-ESXi-WWPN"})
+            mo_1 = self.handle.AddManagedObject(mo, "fcpoolBlock", {"From":pools['wwpn'][fabric]['blockbegin'], "To":pools['wwpn'][fabric]['blockend'], "Dn":self.orgNameDN + "wwn-pool-ESXi-WWPN-" + fabric + "/block-" + pools['wwpn'][fabric]['blockbegin'] + "-" + pools['wwpn'][fabric]['blockend']})
+
+        #mo = handle.AddManagedObject(self.org, "fcpoolInitiators", {"Descr":"ESXi Servers" + fabric, "Name":"ESXi-WWNN", "Purpose":"node-wwn-assignment", "PolicyOwner":"local", "AssignmentOrder":"sequential", "Dn":self.orgNameDN + "wwn-pool-ESXi-WWNN"})
+        #mo_1 = handle.AddManagedObject(mo, "fcpoolBlock", {"From":fabric['blockbegin'], "To":fabric['blockend'], "Dn":self.orgNameDN + "wwn-pool-ESXi-WWNN/block-" + fabric['blockbegin'] + "-" + fabric['blockend']})
+
+        #mo = handle.AddManagedObject(self.org, "uuidpoolPool", {"Descr":"ESXi Servers Fabric " + fabric, "Name":"ESXi-UUID", "Dn":self.orgNameDN + "uuid-pool-ESXi-UUID", "PolicyOwner":"local", "Prefix":"derived", "AssignmentOrder":"sequential"})
+        #mo_1 = handle.AddManagedObject(mo, "uuidpoolBlock", {"From":"0000-000000000001", "To":"0000-000000000100", "Dn":self.orgNameDN + "uuid-pool-ESXi-UUID/block-from-0000-000000000001-to-0000-000000000100"})
+
+
 
     def ucsCreatePolicies(handle):
         #Create/set global policies

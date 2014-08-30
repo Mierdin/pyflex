@@ -23,5 +23,7 @@ class UcsWorker(FlexWorker):
 
         fxns = UcsFunctions(handle, self.config)
         fxns.ucsHousekeeping()
-
+        fxns.createVLANSandVSANS()
+        fxns.createUCSPools()
+        
         #DEFINE REST OF UCS WORKFLOW HERE

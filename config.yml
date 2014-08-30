@@ -56,6 +56,25 @@ general:
     snmp:
         traphost: 10.102.2.100
 
+# UCS Configuration
+#
+# Configuration items specific to UCS
+ucs:
+    pools: #Only creating a single block for everything, just to get stuff working. May consider coming back to allow for multiple pools/purposes, but not sure if anyone really uses that idea.
+        mac:
+            A:
+                blockbegin: 00:25:B5:00:A0:00
+                blockend: 00:25:B5:00:A0:FF
+            B:
+                blockbegin: 00:25:B5:00:B0:00
+                blockend: 00:25:B5:00:B0:FF
+        wwpn:
+            A:
+                blockbegin: 20:00:00:25:B5:00:A0:00
+                blockend: 20:00:00:25:B5:00:A0:FF
+            B:
+                blockbegin: 20:00:00:25:B5:00:B0:00
+                blockend: 20:00:00:25:B5:00:B0:FF
 # VLANS
 #
 # Defines the VLANs and their corresponding names/descriptions that should be
