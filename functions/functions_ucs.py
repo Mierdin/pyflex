@@ -147,16 +147,28 @@ class UcsFunctions:
         self.handle.AddManagedObject(self.rootorg, "computePsuPolicy", {"PolicyOwner":"local", "Redundancy":"grid", "Dn":"org-root/psu-policy", "Descr":""}, True)
         self.handle.AddManagedObject(self.rootorg, "computeChassisDiscPolicy", {"Descr":"", "PolicyOwner":"local", "LinkAggregationPref":"port-channel", "Action":str(self.ucsconfig['ucs']['links']), "Name":"", "Rebalance":"user-acknowledged", "Dn":"org-root/chassis-discovery"}, True)
 
+        qos = self.ucsconfig['qos']
+        defmtu = str(qos['defaultmtu'])
+
+        #UCS will actually accept 1500, but will generate an annoying warning
+        if defmtu == "1500":
+            defmtu = "normal"
+
         #Global QoS policy
-        handle.StartTransaction()
-        obj = handle.GetManagedObject(None, QosclassDefinition.ClassId(), {QosclassDefinition.DN:"fabric/lan/classes"})
-        mo = handle.SetManagedObject(obj, QosclassDefinition.ClassId(), {QosclassDefinition.POLICY_OWNER:"local", QosclassDefinition.DESCR:""})
-        mo_1 = handle.AddManagedObject(mo, QosclassEthBE.ClassId(), {QosclassEthBE.WEIGHT:"9", QosclassEthBE.NAME:"", QosclassEthBE.DN:"fabric/lan/classes/class-best-effort", QosclassEthBE.MTU:"normal", QosclassEthBE.MULTICAST_OPTIMIZE:"no"}, True)
-        mo_2 = handle.AddManagedObject(mo, QosclassEthClassified.ClassId(), {QosclassEthClassified.DROP:"drop", QosclassEthClassified.WEIGHT:"none", QosclassEthClassified.NAME:"", QosclassEthClassified.COS:"1", QosclassEthClassified.DN:"fabric/lan/classes/class-bronze", QosclassEthClassified.ADMIN_STATE:"enabled", QosclassEthClassified.MTU:"9216", QosclassEthClassified.MULTICAST_OPTIMIZE:"no"}, True)
-        mo_3 = handle.AddManagedObject(mo, QosclassEthClassified.ClassId(), {QosclassEthClassified.DROP:"drop", QosclassEthClassified.WEIGHT:"10", QosclassEthClassified.NAME:"", QosclassEthClassified.COS:"4", QosclassEthClassified.DN:"fabric/lan/classes/class-gold", QosclassEthClassified.ADMIN_STATE:"enabled", QosclassEthClassified.MTU:"normal", QosclassEthClassified.MULTICAST_OPTIMIZE:"no"}, True)
-        mo_4 = handle.AddManagedObject(mo, QosclassEthClassified.ClassId(), {QosclassEthClassified.DROP:"drop", QosclassEthClassified.WEIGHT:"none", QosclassEthClassified.NAME:"", QosclassEthClassified.COS:"5", QosclassEthClassified.DN:"fabric/lan/classes/class-platinum", QosclassEthClassified.ADMIN_STATE:"enabled", QosclassEthClassified.MTU:"normal", QosclassEthClassified.MULTICAST_OPTIMIZE:"no"}, True)
-        mo_5 = handle.AddManagedObject(mo, QosclassEthClassified.ClassId(), {QosclassEthClassified.DROP:"drop", QosclassEthClassified.WEIGHT:"best-effort", QosclassEthClassified.NAME:"", QosclassEthClassified.COS:"2", QosclassEthClassified.DN:"fabric/lan/classes/class-silver", QosclassEthClassified.ADMIN_STATE:"enabled", QosclassEthClassified.MTU:"9216", QosclassEthClassified.MULTICAST_OPTIMIZE:"no"}, True)
-        handle.CompleteTransaction()
+        obj = self.handle.GetManagedObject(None, None, {"Dn":"fabric/lan"})
+        mo = self.handle.AddManagedObject(obj, "qosclassDefinition", {"PolicyOwner":"local", "Dn":"fabric/lan/classes", "Descr":""}, True)
+        self.handle.AddManagedObject(mo, "qosclassEthClassified", {"Mtu":"normal", "Name":"", "Dn":"fabric/lan/classes/class-gold", "Weight":"9", "AdminState":"enabled", "Cos":"4", "Drop":"drop", "MulticastOptimize":"no"}, True)
+        self.handle.AddManagedObject(mo, "qosclassEthClassified", {"Mtu":"normal", "Name":"", "Dn":"fabric/lan/classes/class-silver", "Weight":"8", "AdminState":"enabled", "Cos":"2", "Drop":"drop", "MulticastOptimize":"no"}, True)
+        self.handle.AddManagedObject(mo, "qosclassEthClassified", {"Mtu":"normal", "Name":"", "Dn":"fabric/lan/classes/class-bronze", "Weight":"7", "AdminState":"enabled", "Cos":"1", "Drop":"drop", "MulticastOptimize":"no"}, True)
+        self.handle.AddManagedObject(mo, "qosclassEthBE",
+            {
+                "Name":"",
+                "MulticastOptimize":"no",
+                "Mtu":defmtu,
+                "Dn":"fabric/lan/classes/class-best-effort",
+                "Weight":"5"
+            },
+            True)
 
         #Configure NTP
 
@@ -166,35 +178,45 @@ class UcsFunctions:
 
         #Configure SNMP Traps
 
-        #Create single QoS Policy (add more)
-        handle.StartTransaction()
-        obj = handle.GetManagedObject(None, OrgOrg.ClassId(), {OrgOrg.DN:"org-root/org-DI_DCA"})
-        mo = handle.AddManagedObject(obj, EpqosDefinition.ClassId(), {EpqosDefinition.DN:"org-root/org-DI_DCA/ep-qos-Bronze", EpqosDefinition.DESCR:"", EpqosDefinition.NAME:"Bronze", EpqosDefinition.POLICY_OWNER:"local"})
-        mo_1 = handle.AddManagedObject(mo, EpqosEgress.ClassId(), {EpqosEgress.PRIO:"bronze", EpqosEgress.HOST_CONTROL:"none", EpqosEgress.RATE:"line-rate", EpqosEgress.NAME:"", EpqosEgress.DN:"org-root/org-DI_DCA/ep-qos-Bronze/egress", EpqosEgress.BURST:"10240"}, True)
-        handle.CompleteTransaction()
+        #Create individual QoS Policies
+        classes = { 
+            "Gold":"none",
+            "Silver":"none",
+            "Bronze":"none",
+            "Best-Effort":"full"
+        }
 
-        handle.StartTransaction()
-        obj = handle.GetManagedObject(None, OrgOrg.ClassId(), {OrgOrg.DN:"org-root/org-DI_DCA"})
-        mo = handle.AddManagedObject(obj, ComputeQual.ClassId(), {ComputeQual.DN:"org-root/org-DI_DCA/blade-qualifier-B200-M3-QUAL", ComputeQual.POLICY_OWNER:"local", ComputeQual.NAME:"B200-M3-QUAL", ComputeQual.DESCR:"B200 M3 Qualification Policy"})
-        mo_1 = handle.AddManagedObject(mo, ComputePhysicalQual.ClassId(), {ComputePhysicalQual.DN:"org-root/org-DI_DCA/blade-qualifier-B200-M3-QUAL/physical", ComputePhysicalQual.MODEL:"UCSB-B200-M3"})
-        handle.CompleteTransaction()
+        for classname, hostcontrol in classes.iteritems():
+            try:
+                mo = self.handle.AddManagedObject(self.org, "epqosDefinition", {"Name":classname, "Dn":self.orgNameDN + "ep-qos-" + classname, "PolicyOwner":"local", "Descr":classname + " QoS Policy"})
+                mo_1 = self.handle.AddManagedObject(mo, "epqosEgress", {"Name":"", "Burst":"10240", "HostControl":hostcontrol, "Prio":classname.lower(), "Dn":self.orgNameDN + "ep-qos-" + classname + "/egress", "Rate":"line-rate"}, True)
+            except UcsException:
+                print "QoS Policy already exists" #convert to logging and TODO: need to handle this better. Need to poke around at the possible exception types        
 
-        obj = handle.GetManagedObject(None, OrgOrg.ClassId(), {OrgOrg.DN:"org-root/org-DI_DCA"})
-        handle.AddManagedObject(obj, ComputePoolingPolicy.ClassId(), {ComputePoolingPolicy.POLICY_OWNER:"local", ComputePoolingPolicy.DN:"org-root/org-DI_DCA/pooling-policy-B200-M3-PLCY", ComputePoolingPolicy.QUALIFIER:"B200-M3-QUAL", ComputePoolingPolicy.POOL_DN:"org-root/org-DI_DCA/compute-pool-main-server-pool", ComputePoolingPolicy.NAME:"B200-M3-PLCY", ComputePoolingPolicy.DESCR:"B200 M3 Server Pool Policy"})
+        #TODO: Tabling the idea of a blade qualification policy for now. Flexpods don't dictate what blade type you use, so this is a little too much complexity right now. 
+            #Will circle back and deal with this later, but for now, manual assignment of blades will suffice.
+        #mo = handle.AddManagedObject(self.org, ComputeQual.ClassId(), {ComputeQual.DN:"org-root/org-DI_DCA/blade-qualifier-B200-M3-QUAL", ComputeQual.POLICY_OWNER:"local", ComputeQual.NAME:"B200-M3-QUAL", ComputeQual.DESCR:"B200 M3 Qualification Policy"})
+        #mo_1 = handle.AddManagedObject(mo, ComputePhysicalQual.ClassId(), {ComputePhysicalQual.DN:"org-root/org-DI_DCA/blade-qualifier-B200-M3-QUAL/physical", ComputePhysicalQual.MODEL:"UCSB-B200-M3"})
+        #handle.AddManagedObject(self.org, ComputePoolingPolicy.ClassId(), {ComputePoolingPolicy.POLICY_OWNER:"local", ComputePoolingPolicy.DN:"org-root/org-DI_DCA/pooling-policy-B200-M3-PLCY", ComputePoolingPolicy.QUALIFIER:"B200-M3-QUAL", ComputePoolingPolicy.POOL_DN:"org-root/org-DI_DCA/compute-pool-main-server-pool", ComputePoolingPolicy.NAME:"B200-M3-PLCY", ComputePoolingPolicy.DESCR:"B200 M3 Server Pool Policy"})
 
-        obj = handle.GetManagedObject(None, OrgOrg.ClassId(), {OrgOrg.DN:"org-root/org-DI_DCA"})
-        handle.AddManagedObject(obj, FirmwareComputeHostPack.ClassId(), {FirmwareComputeHostPack.BLADE_BUNDLE_VERSION:"", FirmwareComputeHostPack.DN:"org-root/org-DI_DCA/fw-host-pack-HOST_FW_PKG", FirmwareComputeHostPack.MODE:"staged", FirmwareComputeHostPack.UPDATE_TRIGGER:"immediate", FirmwareComputeHostPack.NAME:"HOST_FW_PKG", FirmwareComputeHostPack.STAGE_SIZE:"0", FirmwareComputeHostPack.IGNORE_COMP_CHECK:"yes", FirmwareComputeHostPack.POLICY_OWNER:"local", FirmwareComputeHostPack.DESCR:"B200-m3 Host Firmware Package", FirmwareComputeHostPack.RACK_BUNDLE_VERSION:""})
-
-        obj = handle.GetManagedObject(None, OrgOrg.ClassId(), {OrgOrg.DN:"org-root/org-DI_DCA"})
-        handle.AddManagedObject(obj, LsmaintMaintPolicy.ClassId(), {LsmaintMaintPolicy.UPTIME_DISR:"user-ack", LsmaintMaintPolicy.SCHED_NAME:"", LsmaintMaintPolicy.DN:"org-root/org-DI_DCA/maint-MAINT-USERACK", LsmaintMaintPolicy.DESCR:"Maintenance Policy for User Ack", LsmaintMaintPolicy.POLICY_OWNER:"local", LsmaintMaintPolicy.NAME:"MAINT-USERACK"})
-
-        handle.StartTransaction()
-        obj = handle.GetManagedObject(None, OrgOrg.ClassId(), {OrgOrg.DN:"org-root/org-DI_DCA"})
-        mo = handle.AddManagedObject(obj, NwctrlDefinition.ClassId(), {NwctrlDefinition.POLICY_OWNER:"local", NwctrlDefinition.CDP:"enabled", NwctrlDefinition.NAME:"NTKCTRLPOLICY", NwctrlDefinition.DN:"org-root/org-DI_DCA/nwctrl-NTKCTRLPOLICY", NwctrlDefinition.MAC_REGISTER_MODE:"only-native-vlan", NwctrlDefinition.DESCR:"", NwctrlDefinition.UPLINK_FAIL_ACTION:"link-down"})
-        mo_1 = handle.AddManagedObject(mo, DpsecMac.ClassId(), {DpsecMac.DN:"org-root/org-DI_DCA/nwctrl-NTKCTRLPOLICY/mac-sec", DpsecMac.POLICY_OWNER:"local", DpsecMac.NAME:"", DpsecMac.DESCR:"", DpsecMac.FORGE:"allow"}, True)
-        handle.CompleteTransaction()
-
-
+        #Create Host Firmware Package
+        try:
+            self.handle.AddManagedObject(self.org, "firmwareComputeHostPack", {"Name":"HOST_FW_PKG", "BladeBundleVersion":"", "RackBundleVersion":"", "PolicyOwner":"local", "Dn":self.orgNameDN + "fw-host-pack-HOST_FW_PKG", "Mode":"staged", "IgnoreCompCheck":"yes", "StageSize":"0", "Descr":"Host Firmware Package", "UpdateTrigger":"immediate"})
+        except UcsException:
+            print "Host Firmware Package already exists" #convert to logging and TODO: need to handle this better. Need to poke around at the possible exception types
+        
+        #Create Maintenance Policy
+        try:
+            self.handle.AddManagedObject(self.org, "lsmaintMaintPolicy", {"Descr":"User-Ack Maintenance Policy", "SchedName":"", "Name":"MAINT-USERACK", "Dn":self.orgNameDN + "maint-MAINT-USERACK", "PolicyOwner":"local", "UptimeDisr":"user-ack"})
+        except UcsException:
+            print "Maintenance Policy already exists" #convert to logging and TODO: need to handle this better. Need to poke around at the possible exception types
+        
+        #Create Network Control Policy (enable CDP)
+        try:
+            mo = self.handle.AddManagedObject(self.org, "nwctrlDefinition", {"Name":"NTKCTRL-CDP", "Cdp":"enabled", "Dn":self.orgNameDN + "nwctrl-NTKCTRL-CDP", "PolicyOwner":"local", "MacRegisterMode":"only-native-vlan", "UplinkFailAction":"link-down", "Descr":"Network Control Polcy - CDP Enabled"})
+            mo_1 = self.handle.AddManagedObject(mo, "dpsecMac", {"Name":"", "Dn":self.orgNameDN + "nwctrl-NTKCTRL-CDP/mac-sec", "Forge":"allow", "PolicyOwner":"local", "Descr":""}, True)
+        except UcsException:
+            print "Network Control Policy already exists" #convert to logging and TODO: need to handle this better. Need to poke around at the possible exception types
 
     def createBootPolicy(handle):
             #This function was moved out of the main policy creation function because BFS can be driven by data retrieved from the storage array.
