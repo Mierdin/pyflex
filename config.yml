@@ -60,7 +60,7 @@ general:
 #
 # Configuration items specific to UCS
 ucs:
-    pools: #Only creating a single block for everything, just to get stuff working. May consider coming back to allow for multiple pools/purposes, but not sure if anyone really uses that idea.
+    pools:
         mac:
             A:
                 blockbegin: 00:25:B5:00:A0:00
@@ -75,6 +75,15 @@ ucs:
             B:
                 blockbegin: 20:00:00:25:B5:00:B0:00
                 blockend: 20:00:00:25:B5:00:B0:FF
+        wwnn:
+                blockbegin: 20:00:00:25:B5:00:F0:00
+                blockend: 20:00:00:25:B5:00:F0:FF
+        uuid:
+                blockbegin: 0000-000000000001
+                blockend: 0000-000000000100
+    links: 4-link #How many connections will be used on a chassis IOM? This will be strictly enforced via the global chassis discovery policy
+                # options are 1-link, 2-link, 4-link, 8-link, or platform-max
+
 # VLANS
 #
 # Defines the VLANs and their corresponding names/descriptions that should be
@@ -113,7 +122,7 @@ vsans:
 # Specifies some parameters to be used in a standard MQC-style configuration
 qos:
     defaultmtu: 1500 # The MTU to be used on class-default 
-                     # (unclassified) traffic
+                 # (unclassified) traffic
 
 # PORTS
 #

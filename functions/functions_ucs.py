@@ -64,6 +64,7 @@ class UcsFunctions:
         #TODO: at this point, ext-mgmt is still empty. Consider implementing this here, or even better, in another method.
 
     def createVLANSandVSANS(self):
+        
         obj = self.handle.GetManagedObject(None, None, {"Dn":"fabric/lan"})
         
         vlans = self.ucsconfig['vlans']
@@ -88,30 +89,63 @@ class UcsFunctions:
 
 
     def createUCSPools(self):
-
+        #TODO: Lots of shortcuts taken here. Need to come back and clean up this atrocious mess.
         pools = self.ucsconfig['ucs']['pools']
 
+        #MAC Pools
         for fabric in pools['mac']: #TODO: This loop is here for the future, but obviously since the name is statically set, this only works with a single pool per fabric, currently.
-            mo = self.handle.AddManagedObject(self.org, "macpoolPool", {"Descr":"ESXi Servers Fabric " + fabric, "Name":"ESXi-MAC-" + fabric, "AssignmentOrder":"sequential", "PolicyOwner":"local", "Dn":self.orgNameDN + "mac-pool-" + "ESXi-MAC-" + fabric})
-            mo_1 = self.handle.AddManagedObject(mo, "macpoolBlock", {"From":pools['mac'][fabric]['blockbegin'], "To":pools['mac'][fabric]['blockend'], "Dn":self.orgNameDN + "mac-pool-ESXi-MAC-" + fabric + "/block-" + pools['mac'][fabric]['blockbegin'] + "-"  + pools['mac'][fabric]['blockend']})
+            try:
+                mo = self.handle.AddManagedObject(self.org, "macpoolPool", {"Descr":"ESXi Servers Fabric " + fabric, "Name":"ESXi-MAC-" + fabric, "AssignmentOrder":"sequential", "PolicyOwner":"local", "Dn":self.orgNameDN + "mac-pool-" + "ESXi-MAC-" + fabric})
+            except UcsException:
+                print "MAC Pool already exists" #convert to logging and TODO: need to handle this better. Need to poke around at the possible exception types
+                mo = self.handle.GetManagedObject(None, None, {"Dn":self.orgNameDN + "mac-pool-ESXi-MAC-" + fabric}) #We need to do this because the creation of the pool, and it's blocks, are separate actions
+            
+            try:
+                mo_1 = self.handle.AddManagedObject(mo, "macpoolBlock", {"From":pools['mac'][fabric]['blockbegin'], "To":pools['mac'][fabric]['blockend'], "Dn":self.orgNameDN + "mac-pool-ESXi-MAC-" + fabric + "/block-" + pools['mac'][fabric]['blockbegin'] + "-"  + pools['mac'][fabric]['blockend']})
+            except UcsException:
+                print "MAC Pool block already exists" #convert to logging and TODO: need to handle this better. Need to poke around at the possible exception types
 
+        #WWPN Pools
         for fabric in pools['wwpn']:
-            mo = self.handle.AddManagedObject(self.org, "fcpoolInitiators", {"Descr":"ESXi Servers Fabric " + fabric, "Name":"ESXi-WWPN-" + fabric, "Purpose":"port-wwn-assignment", "PolicyOwner":"local", "AssignmentOrder":"sequential", "Dn":self.orgNameDN + "wwn-pool-ESXi-WWPN"})
-            mo_1 = self.handle.AddManagedObject(mo, "fcpoolBlock", {"From":pools['wwpn'][fabric]['blockbegin'], "To":pools['wwpn'][fabric]['blockend'], "Dn":self.orgNameDN + "wwn-pool-ESXi-WWPN-" + fabric + "/block-" + pools['wwpn'][fabric]['blockbegin'] + "-" + pools['wwpn'][fabric]['blockend']})
+            try:
+                mo = self.handle.AddManagedObject(self.org, "fcpoolInitiators", {"Descr":"ESXi Servers Fabric " + fabric, "Name":"ESXi-WWPN-" + fabric, "Purpose":"port-wwn-assignment", "PolicyOwner":"local", "AssignmentOrder":"sequential", "Dn":self.orgNameDN + "wwn-pool-ESXi-WWPN"})
+            except UcsException:
+                print "WWPN Pool already exists" #convert to logging and TODO: need to handle this better. Need to poke around at the possible exception types
+                mo = self.handle.GetManagedObject(None, None, {"Dn":self.orgNameDN + "wwn-pool-ESXi-WWPN-" + fabric}) #We need to do this because the creation of the pool, and it's blocks, are separate actions
 
-        #mo = handle.AddManagedObject(self.org, "fcpoolInitiators", {"Descr":"ESXi Servers" + fabric, "Name":"ESXi-WWNN", "Purpose":"node-wwn-assignment", "PolicyOwner":"local", "AssignmentOrder":"sequential", "Dn":self.orgNameDN + "wwn-pool-ESXi-WWNN"})
-        #mo_1 = handle.AddManagedObject(mo, "fcpoolBlock", {"From":fabric['blockbegin'], "To":fabric['blockend'], "Dn":self.orgNameDN + "wwn-pool-ESXi-WWNN/block-" + fabric['blockbegin'] + "-" + fabric['blockend']})
+            try:
+                mo_1 = self.handle.AddManagedObject(mo, "fcpoolBlock", {"From":pools['wwpn'][fabric]['blockbegin'], "To":pools['wwpn'][fabric]['blockend'], "Dn":self.orgNameDN + "wwn-pool-ESXi-WWPN-" + fabric + "/block-" + pools['wwpn'][fabric]['blockbegin'] + "-" + pools['wwpn'][fabric]['blockend']})
+            except UcsException:
+                print "WWPN Pool block already exists" #convert to logging and TODO: need to handle this better. Need to poke around at the possible exception types
+        
+        #WWNN Pools
+        try:   
+            mo = self.handle.AddManagedObject(self.org, "fcpoolInitiators", {"Descr":"ESXi Servers", "Name":"ESXi-WWNN", "Purpose":"node-wwn-assignment", "PolicyOwner":"local", "AssignmentOrder":"sequential", "Dn":self.orgNameDN + "wwn-pool-ESXi-WWNN"})
+        except UcsException:
+            print "WWNN Pool already exists" #convert to logging and TODO: need to handle this better. Need to poke around at the possible exception types
+            mo = self.handle.GetManagedObject(None, None, {"Dn":self.orgNameDN + "wwn-pool-ESXi-WWNN"}) #We need to do this because the creation of the pool, and it's blocks, are separate actions
+        try:
+            mo_1 = self.handle.AddManagedObject(mo, "fcpoolBlock", {"From":pools['wwnn']['blockbegin'], "To":pools['wwnn']['blockend'], "Dn":self.orgNameDN + "wwn-pool-ESXi-WWNN/block-" + pools['wwnn']['blockbegin'] + "-" + pools['wwnn']['blockend']})
+        except UcsException:
+            print "WWNN Pool block already exists" #convert to logging and TODO: need to handle this better. Need to poke around at the possible exception types
+        
+        #UUID Pools
+        try:
+            mo = self.handle.AddManagedObject(self.org, "uuidpoolPool", {"Descr":"ESXi Servers", "Name":"ESXi-UUID", "Dn":self.orgNameDN + "uuid-pool-ESXi-UUID", "PolicyOwner":"local", "Prefix":"derived", "AssignmentOrder":"sequential"})
+        except UcsException:
+            print "UUID Pool already exists" #convert to logging and TODO: need to handle this better. Need to poke around at the possible exception types
+            mo = self.handle.GetManagedObject(None, None, {"Dn":self.orgNameDN + "wwn-pool-ESXi-UUID"}) #We need to do this because the creation of the pool, and it's blocks, are separate actions        
 
-        #mo = handle.AddManagedObject(self.org, "uuidpoolPool", {"Descr":"ESXi Servers Fabric " + fabric, "Name":"ESXi-UUID", "Dn":self.orgNameDN + "uuid-pool-ESXi-UUID", "PolicyOwner":"local", "Prefix":"derived", "AssignmentOrder":"sequential"})
-        #mo_1 = handle.AddManagedObject(mo, "uuidpoolBlock", {"From":"0000-000000000001", "To":"0000-000000000100", "Dn":self.orgNameDN + "uuid-pool-ESXi-UUID/block-from-0000-000000000001-to-0000-000000000100"})
-
+        try:
+            mo_1 = self.handle.AddManagedObject(mo, "uuidpoolBlock", {"From":pools['uuid']['blockbegin'], "To":pools['uuid']['blockend'], "Dn":self.orgNameDN + "uuid-pool-ESXi-UUID/block-from-" + pools['uuid']['blockbegin'] + "-to-" + pools['uuid']['blockend']})
+        except UcsException:
+            print "UUID Pool block already exists" #convert to logging and TODO: need to handle this better. Need to poke around at the possible exception types
 
 
     def ucsCreatePolicies(self):
         #Create/set global policies
         self.handle.AddManagedObject(self.rootorg, "computePsuPolicy", {"PolicyOwner":"local", "Redundancy":"grid", "Dn":"org-root/psu-policy", "Descr":""}, True)
         self.handle.AddManagedObject(self.rootorg, "computeChassisDiscPolicy", {"Descr":"", "PolicyOwner":"local", "LinkAggregationPref":"port-channel", "Action":str(self.ucsconfig['ucs']['links']), "Name":"", "Rebalance":"user-acknowledged", "Dn":"org-root/chassis-discovery"}, True)
-        #platform-max is the last option.
 
         #Global QoS policy
         handle.StartTransaction()
