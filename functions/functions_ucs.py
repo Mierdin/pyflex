@@ -218,21 +218,34 @@ class UcsFunctions:
         except UcsException:
             print "Network Control Policy already exists" #convert to logging and TODO: need to handle this better. Need to poke around at the possible exception types
 
-    def createBootPolicy(handle):
-            #This function was moved out of the main policy creation function because BFS can be driven by data retrieved from the storage array.
-        #Ideally, the main function should reach into the array (should have a "retrieve four targets" function for this) then this function gets run with an array as an argument for those four tagets to fall into.
-        handle.StartTransaction()
-        obj = handle.GetManagedObject(None, OrgOrg.ClassId(), {OrgOrg.DN:"org-root/org-DI_DCA"})
-        mo = handle.AddManagedObject(obj, LsbootPolicy.ClassId(), {LsbootPolicy.POLICY_OWNER:"local", LsbootPolicy.REBOOT_ON_UPDATE:"no", LsbootPolicy.NAME:"BOOT_POLICY", LsbootPolicy.ENFORCE_VNIC_NAME:"yes", LsbootPolicy.DN:"org-root/org-DI_DCA/boot-policy-BOOT_POLICY", LsbootPolicy.DESCR:"Boot Policy"})
-        mo_1 = handle.AddManagedObject(mo, LsbootVirtualMedia.ClassId(), {LsbootVirtualMedia.DN:"org-root/org-DI_DCA/boot-policy-BOOT_POLICY/read-only-vm", LsbootVirtualMedia.ACCESS:"read-only", LsbootVirtualMedia.ORDER:"1"})
-        mo_2 = handle.AddManagedObject(mo, LsbootStorage.ClassId(), {LsbootStorage.DN:"org-root/org-DI_DCA/boot-policy-BOOT_POLICY/storage", LsbootStorage.ORDER:"2"}, True)
-        mo_2_1 = handle.AddManagedObject(mo_2, LsbootSanImage.ClassId(), {LsbootSanImage.VNIC_NAME:"ESX-VHBA-A", LsbootSanImage.DN:"org-root/org-DI_DCA/boot-policy-BOOT_POLICY/storage/san-primary", LsbootSanImage.TYPE:"primary"})
-        mo_2_1_1 = handle.AddManagedObject(mo_2_1, LsbootSanImagePath.ClassId(), {LsbootSanImagePath.TYPE:"primary", LsbootSanImagePath.DN:"org-root/org-DI_DCA/boot-policy-BOOT_POLICY/storage/san-primary/path-primary", LsbootSanImagePath.LUN:"0", LsbootSanImagePath.WWN:"50:00:00:00:00:00:00:00"})
-        mo_2_1_2 = handle.AddManagedObject(mo_2_1, LsbootSanImagePath.ClassId(), {LsbootSanImagePath.TYPE:"secondary", LsbootSanImagePath.DN:"org-root/org-DI_DCA/boot-policy-BOOT_POLICY/storage/san-primary/path-secondary", LsbootSanImagePath.LUN:"0", LsbootSanImagePath.WWN:"50:00:00:00:00:00:00:01"})
-        mo_2_2 = handle.AddManagedObject(mo_2, LsbootSanImage.ClassId(), {LsbootSanImage.VNIC_NAME:"ESX-VHBA-B", LsbootSanImage.DN:"org-root/org-DI_DCA/boot-policy-BOOT_POLICY/storage/san-secondary", LsbootSanImage.TYPE:"secondary"})
-        mo_2_2_1 = handle.AddManagedObject(mo_2_2, LsbootSanImagePath.ClassId(), {LsbootSanImagePath.TYPE:"primary", LsbootSanImagePath.DN:"org-root/org-DI_DCA/boot-policy-BOOT_POLICY/storage/san-secondary/path-primary", LsbootSanImagePath.LUN:"0", LsbootSanImagePath.WWN:"50:00:00:00:00:00:00:02"})
-        mo_2_2_2 = handle.AddManagedObject(mo_2_2, LsbootSanImagePath.ClassId(), {LsbootSanImagePath.TYPE:"secondary", LsbootSanImagePath.DN:"org-root/org-DI_DCA/boot-policy-BOOT_POLICY/storage/san-secondary/path-secondary", LsbootSanImagePath.LUN:"0", LsbootSanImagePath.WWN:"50:00:00:00:00:00:00:03"})
-        handle.CompleteTransaction()
+    def createBootPolicy(self):
+        #TODO: Ideally, this function should reach into the array (should have a "retrieve four targets" function for this) then this function gets run with an array as an argument for those four tagets to fall into.
+        
+        targets = self.ucsconfig['storage']['targets']
+
+        #TODO: I decided to wrap the entire thing in a try block....may break it out further once simplified, having a try block per line is a bit much right now. We'll just 
+        try:
+            #Create Boot Policy
+            mo = self.handle.AddManagedObject(self.org, "lsbootPolicy", {"Name":"BFS_POLICY", "EnforceVnicName":"yes", "Dn":self.orgNameDN + "boot-policy-BFS_POLICY", "PolicyOwner":"local", "RebootOnUpdate":"no", "Descr":"Boot Policy (Boot From SAN)"})
+
+            #Add CD-ROM Boot
+            self.handle.AddManagedObject(mo, "lsbootVirtualMedia", {"Access":"read-only", "Dn":self.orgNameDN + "boot-policy-BFS_POLICY/read-only-vm", "Order":"1"})
+
+            #Add SAN Boot
+            mo_2 = self.handle.AddManagedObject(mo, "lsbootStorage", {"Order":"2", "Dn":self.orgNameDN + "boot-policy-BFS_POLICY/storage"}, True)
+
+            #Add SAN Boot Target Fabric A
+            mo_2_1 = self.handle.AddManagedObject(mo_2, "lsbootSanImage", {"VnicName":"ESX-VHBA-A", "Type":"primary", "Dn":self.orgNameDN + "boot-policy-BFS_POLICY/storage/san-primary"})
+            mo_2_1_1 = self.handle.AddManagedObject(mo_2_1, "lsbootSanImagePath", {"Dn":self.orgNameDN + "boot-policy-BFS_POLICY/storage/san-primary/path-primary", "Type":"primary", "Lun":"0", "Wwn":targets['A'][0]})
+            mo_2_1_2 = self.handle.AddManagedObject(mo_2_1, "lsbootSanImagePath", {"Dn":self.orgNameDN + "boot-policy-BFS_POLICY/storage/san-primary/path-secondary", "Type":"secondary", "Lun":"0", "Wwn":targets['A'][1]})
+
+            #Add SAN Boot Target Fabric B
+            mo_2_2 = self.handle.AddManagedObject(mo_2, "lsbootSanImage", {"VnicName":"ESX-VHBA-B", "Type":"secondary", "Dn":self.orgNameDN + "boot-policy-BFS_POLICY/storage/san-secondary"})
+            mo_2_2_1 = self.handle.AddManagedObject(mo_2_2, "lsbootSanImagePath", {"Dn":self.orgNameDN + "boot-policy-BFS_POLICY/storage/san-secondary/path-primary", "Type":"primary", "Lun":"0", "Wwn":targets['B'][0]})
+            mo_2_2_2 = self.handle.AddManagedObject(mo_2_2, "lsbootSanImagePath", {"Dn":self.orgNameDN + "boot-policy-BFS_POLICY/storage/san-secondary/path-secondary", "Type":"secondary", "Lun":"0", "Wwn":targets['B'][1]})
+       
+        except UcsException:
+            print "Boot Policy already exists" #convert to logging and TODO: need to handle this better. Need to poke around at the possible exception types
 
     def createVNICandVHBATemplates(handle):
         handle.StartTransaction()

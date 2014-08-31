@@ -11,6 +11,7 @@
 # Sections
 #
 # Use this section to determine which portions of the infrastructure are built
+# (Currently unimplemented)
 sections:
     - ucs
 #    - netapp
@@ -143,3 +144,10 @@ storage: #revisit this - might not need to expose all of these
     var_na_vserver: FC_VS1
     var_na_vserverRootVol: = FC_VS1_root
     var_na_bootVol: /vol/FC_BootVol1/ #Needs to be of this format, including the forward slashes. LUN will be appended without any slashes
+    targets:
+        A:
+            - "50:00:00:00:00:00:00:00"
+            - "50:00:00:00:00:00:00:01"
+        B:
+            - "50:00:00:00:00:00:00:02"
+            - "50:00:00:00:00:00:00:03"
