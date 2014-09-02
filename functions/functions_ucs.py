@@ -3,6 +3,8 @@ from UcsSdk import *
 class UcsFunctions:
     # Need to pull over comments from ps1 scripts where relevant
 
+    FABRICS = ['A', 'B']
+
     def __init__(self, handle, ucsconfig):
         
         self.handle = handle
@@ -63,6 +65,10 @@ class UcsFunctions:
 
         #TODO: at this point, ext-mgmt is still empty. Consider implementing this here, or even better, in another method.
 
+    def implementPhysicalPortChanges(self):
+        #method title obviously a working title :)
+        pass
+
     def createVLANSandVSANS(self):
         
         obj = self.handle.GetManagedObject(None, None, {"Dn":"fabric/lan"})
@@ -80,7 +86,7 @@ class UcsFunctions:
         vsans = self.ucsconfig['vsans']
 
         for fabric in vsans:
-            obj = self.handle.GetManagedObject(None, None, {"Dn":"fabric/san/" + fabric.upper()})
+            obj = self.handle.GetManagedObject(None, None, {"Dn":"fabric/san/" + fabric.upper()}) #Note: This is inside the for loop because VSANs are generally per-fabric, and VLANs are not.
             for vsanid, vsanname in vsans[fabric].iteritems():
                 try:
                     self.handle.AddManagedObject(obj, "fabricVsan", {"Name":vsanname, "ZoningState":"disabled", "PolicyOwner":"local", "FcZoneSharingMode":"coalesce", "FcoeVlan":str(vsanid), "Dn":"fabric/san/" + fabric.upper() + "/", "Id":str(vsanid)})
@@ -247,19 +253,92 @@ class UcsFunctions:
         except UcsException:
             print "Boot Policy already exists" #convert to logging and TODO: need to handle this better. Need to poke around at the possible exception types
 
-    def createVNICandVHBATemplates(handle):
-        handle.StartTransaction()
-        obj = handle.GetManagedObject(None, OrgOrg.ClassId(), {OrgOrg.DN:"org-root/org-DI_DCA"})
-        mo = handle.AddManagedObject(obj, VnicLanConnTempl.ClassId(), {VnicLanConnTempl.QOS_POLICY_NAME:"qos-1", VnicLanConnTempl.MTU:"1500", VnicLanConnTempl.DESCR:"Management NIC - ESXi Hosts - Fabric A", VnicLanConnTempl.IDENT_POOL_NAME:"ESX-MAC-A", VnicLanConnTempl.NAME:"ESX-MGMT-A", VnicLanConnTempl.TEMPL_TYPE:"updating-template", VnicLanConnTempl.DN:"org-root/org-DI_DCA/lan-conn-templ-ESX-MGMT-A", VnicLanConnTempl.SWITCH_ID:"A", VnicLanConnTempl.POLICY_OWNER:"local", VnicLanConnTempl.NW_CTRL_POLICY_NAME:"NTKCTRLPOLICY", VnicLanConnTempl.PIN_TO_GROUP_NAME:"", VnicLanConnTempl.STATS_POLICY_NAME:"default"})
-        mo_1 = handle.AddManagedObject(mo, VnicEtherIf.ClassId(), {VnicEtherIf.DN:"org-root/org-DI_DCA/lan-conn-templ-ESX-MGMT-A/if-VLAN_10", VnicEtherIf.NAME:"VLAN_10", VnicEtherIf.DEFAULT_NET:"no"}, True)
-        mo_2 = handle.AddManagedObject(mo, VnicEtherIf.ClassId(), {VnicEtherIf.DN:"org-root/org-DI_DCA/lan-conn-templ-ESX-MGMT-A/if-default", VnicEtherIf.NAME:"default", VnicEtherIf.DEFAULT_NET:"no"}, True)
-        handle.CompleteTransaction()
+    def createVNICTemplates(self):
 
-        handle.StartTransaction()
-        obj = handle.GetManagedObject(None, OrgOrg.ClassId(), {OrgOrg.DN:"org-root/org-DI_DCA"})
-        mo = handle.AddManagedObject(obj, VnicSanConnTempl.ClassId(), {VnicSanConnTempl.QOS_POLICY_NAME:"", VnicSanConnTempl.POLICY_OWNER:"local", VnicSanConnTempl.NAME:"ESX-VHBA-A", VnicSanConnTempl.SWITCH_ID:"A", VnicSanConnTempl.IDENT_POOL_NAME:"ESX-WWPN-A", VnicSanConnTempl.MAX_DATA_FIELD_SIZE:"2048", VnicSanConnTempl.STATS_POLICY_NAME:"default", VnicSanConnTempl.PIN_TO_GROUP_NAME:"", VnicSanConnTempl.DESCR:"ESXi vHBA Fabric A", VnicSanConnTempl.TEMPL_TYPE:"updating-template", VnicSanConnTempl.DN:"org-root/org-DI_DCA/san-conn-templ-ESX-VHBA-A"})
-        mo_1 = handle.AddManagedObject(mo, VnicFcIf.ClassId(), {VnicFcIf.NAME:"VSAN_100", VnicFcIf.DN:"org-root/org-DI_DCA/san-conn-templ-ESX-VHBA-A/if-default"}, True)
-        handle.CompleteTransaction()
+        #TODO: This method is currently written to statically support a very common vNIC layout. In the future, some kind of mechanism should be written to support changes to this layout if desired. 
+                # That said, the below "vlangroups" dictionary that maps vNIC prefixes to intended VLAN group in the config is the current prototype mechanism
+
+        #maps vNIC "prefix" to intended VLAN group in config file
+        vlangroups = {
+            "ESX-MGMT": "mgmt",
+            "ESX-NFS": "nfs",
+            "ESX-PROD": "prod"
+        }
+
+        #vNIC
+        for vnicprefix, vlangroup in vlangroups.iteritems():
+            
+            for fabricID in UcsFunctions.FABRICS:
+                try:
+                    mo = self.handle.AddManagedObject(self.org, "vnicLanConnTempl", 
+                        {
+                            "Name":vnicprefix + "-" + fabricID,
+                            "Descr":vnicprefix + " - Fabric " + fabricID, # TODO: Need a better description method with current "vlangroups" mechanism
+                            "SwitchId":fabricID, 
+                            "QosPolicyName":"BE", 
+                            "NwCtrlPolicyName":"NTKCTRL-CDP", 
+                            "StatsPolicyName":"default", 
+                            "TemplType":"updating-template", 
+                            "PolicyOwner":"local", 
+                            "Mtu":"9000", #Setting to 9000 here since class-default is still set to 1500, so this doesn't hurt much.  Consider adding this as a configurable item. 
+                            "PinToGroupName":"", 
+                            "Dn":self.orgNameDN + "lan-conn-templ-" + vnicprefix + "-" + fabricID, 
+                            "IdentPoolName":"ESXi-MAC-" + fabricID
+                        })
+                except UcsException:
+                    print "vNIC '" + vnicprefix + "-" + fabricID + "' already exists" #convert to logging and TODO: need to handle this better. Need to poke around at the possible exception types
+                    mo = self.handle.GetManagedObject(None, None, {"Dn":self.orgNameDN + "lan-conn-templ-" + vnicprefix + "-" + fabricID}) #We need to do this because the creation of the vNIC, and it's VLANs, are separate actions
+
+                #Add VLANs to vNIC
+                vlans = self.ucsconfig['vlans']
+
+                for vlanid, vlanname in vlans[vlangroup].iteritems():
+                    
+                    try:
+
+                        self.handle.AddManagedObject(mo, "vnicEtherIf", 
+                            {
+                                "Name":vlanname, 
+                                "Dn":self.orgNameDN + "lan-conn-templ-" + vnicprefix + "-" + fabricID + "/if-" + vlanname, 
+                                "DefaultNet":"no" #Currently setting no native VLAN for any vNICs, leaving it up to the downstream device to tag (for now)
+                            }, True)
+
+                    except UcsException:
+                        print "vNIC '" + vnicprefix + "-" + fabricID + "' already contains VLAN " + vlanname #convert to logging and TODO: need to handle this better. Need to poke around at the possible exception types
+
+    def createVHBATemplates(self):
+
+        #vHBA
+        for fabricID in UcsFunctions.FABRICS:
+            
+            try:
+                mo = self.handle.AddManagedObject(self.org, "vnicSanConnTempl", 
+                    {
+                        "Name":"ESX-VHBA-" + fabricID, 
+                        "Descr":"ESXi Servers - vHBA Fabric " + fabricID, 
+                        "SwitchId":fabricID, 
+                        "QosPolicyName":"", 
+                        "MaxDataFieldSize":"2048", 
+                        "StatsPolicyName":"default", 
+                        "TemplType":"updating-template", 
+                        "PolicyOwner":"local", 
+                        "Dn":self.orgNameDN + "san-conn-templ-ESX-VHBA-" + fabricID, 
+                        "PinToGroupName":"", 
+                        "IdentPoolName":"ESXi-WWPN-" + fabricID
+                    })
+            except UcsException:
+                print "vHBA 'ESX-VHBA-" + fabricID + "' already exists" #convert to logging and TODO: need to handle this better. Need to poke around at the possible exception types
+                mo = self.handle.GetManagedObject(None, None, {"Dn":self.orgNameDN + "san-conn-templ-ESX-VHBA-" + fabricID}) #We need to do this because the creation of the vHBA, and it's VSANs, are separate actions
+
+            try:
+                self.handle.AddManagedObject(mo, "vnicFcIf", 
+                    {
+                        "Name":"FCoE_Fabric_" + fabricID,
+                        "Dn":self.orgNameDN + "san-conn-templ-ESX-VHBA-" + fabricID + "/if-default"
+                    }, True)
+            except UcsException:
+                print "vHBA 'ESX-VHBA-" + fabricID + "' already contains VSAN " + "FCoE_Fabric_" + fabricID #convert to logging and TODO: need to handle this better. Need to poke around at the possible exception types
+
 
     def createSpTemplates(handle):
         handle.StartTransaction()

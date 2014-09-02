@@ -3,8 +3,7 @@
 # Author: Matt Oswalt (http://keepingitclassless.net)
 #
 # This configuration file houses all of the dymanically populated information
-# that makes it's way into an NXOS configuration script through Jinja2
-# templates.
+# for a Flexpod. 
 #
 # Refer to the README for more details on how to use this tool.
 
@@ -92,18 +91,21 @@ ucs:
 #
 # Format is a key/value pair, where VLAN ID is the key, and name/description is
 # the corresponding value.
+#
+# As of now, the use of forward slashes is not allowed, as it currently messes with MO paths (TODO: Fix this)
+#
+# Also it is very important to provide a Unique name/description for each VLAN ID provided. UCS currently uses this value to determine VLAN membership. It's also just good sense.
 vlans:
     mgmt:
         240: ESX_MGMT_10.1.40.0
+    nfs:
+        260: NFS_10.1.160.0
     prod:
         109: Core_Services_10.1.9.0
         232: 1000v-Control_10.1.32.0
         234: CIFS_10.1.34.0
         241: vMotion_10.1.41.0
         249: Corporate-VMs_10.1.49.0
-        260: NFS_10.1.160.0
-
-#TODO: Can't have forward slashes here, or actually in most places, as it screws up MO paths.
 
 # VSANS
 #
