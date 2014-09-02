@@ -207,6 +207,37 @@ class UcsFunctions:
         #mo_1 = handle.AddManagedObject(mo, ComputePhysicalQual.ClassId(), {ComputePhysicalQual.DN:"org-root/org-DI_DCA/blade-qualifier-B200-M3-QUAL/physical", ComputePhysicalQual.MODEL:"UCSB-B200-M3"})
         #handle.AddManagedObject(self.org, ComputePoolingPolicy.ClassId(), {ComputePoolingPolicy.POLICY_OWNER:"local", ComputePoolingPolicy.DN:"org-root/org-DI_DCA/pooling-policy-B200-M3-PLCY", ComputePoolingPolicy.QUALIFIER:"B200-M3-QUAL", ComputePoolingPolicy.POOL_DN:"org-root/org-DI_DCA/compute-pool-main-server-pool", ComputePoolingPolicy.NAME:"B200-M3-PLCY", ComputePoolingPolicy.DESCR:"B200 M3 Server Pool Policy"})
 
+        #Create Local Disk Configurations
+        try:
+            self.handle.AddManagedObject(obj, "storageLocalDiskConfigPolicy", 
+                {       
+                    "Name":"NO_LOCAL", 
+                    "Descr":"No Local Disk", 
+                    "PolicyOwner":"local", 
+                    "ProtectConfig":"yes", 
+                    "Dn":self.orgNameDN + "local-disk-config-NO_LOCAL", 
+                    "Mode":"no-local-storage", 
+                    "FlexFlashState":"disable", 
+                    "FlexFlashRAIDReportingState":"disable"
+                })
+        except UcsException:
+            print "Local Disk Configuration Policy already exists" #convert to logging and TODO: need to handle this better. Need to poke around at the possible exception types 
+
+        try:
+            self.handle.AddManagedObject(obj, "storageLocalDiskConfigPolicy", #Creating this just so that it's there. Not currently used in the boot-from-SAN configuration
+                {        
+                    "Name":"RAID1", 
+                    "Descr":"Local Disk arranged in RAID 1", 
+                    "PolicyOwner":"local", 
+                    "ProtectConfig":"yes", 
+                    "Dn":self.orgNameDN + "local-disk-config-RAID1", 
+                    "Mode":"raid-mirrored", 
+                    "FlexFlashState":"disable", 
+                    "FlexFlashRAIDReportingState":"disable"
+                })
+        except UcsException:
+            print "Local Disk Configuration Policy already exists" #convert to logging and TODO: need to handle this better. Need to poke around at the possible exception types
+
         #Create Host Firmware Package
         try:
             self.handle.AddManagedObject(self.org, "firmwareComputeHostPack", {"Name":"HOST_FW_PKG", "BladeBundleVersion":"", "RackBundleVersion":"", "PolicyOwner":"local", "Dn":self.orgNameDN + "fw-host-pack-HOST_FW_PKG", "Mode":"staged", "IgnoreCompCheck":"yes", "StageSize":"0", "Descr":"Host Firmware Package", "UpdateTrigger":"immediate"})
@@ -364,7 +395,7 @@ class UcsFunctions:
                     "Name":sptname, 
                     "MgmtFwPolicyName":"", 
                     "MaintPolicyName":"MAINT-USERACK", 
-                    "LocalDiskPolicyName":"", #Change to NO_LOCAL once policy is implemented 
+                    "LocalDiskPolicyName":"NO_LOCAL",
                     "Descr":"This is the main Service Profile Template for ESXi Servers", 
                     "DynamicConPolicyName":"", 
                     "Type":"updating-template", 
@@ -461,7 +492,7 @@ class UcsFunctions:
                             "NwTemplName":vnic
                         })
 
-                    #TODO: Pretty sure this isn't needed. This should basically be ignored right now since the vHBA Template is being referenced. Dig into the docs and verify this.
+                    #TODO: Pretty sure this isn't needed. This should basically be ignored right now since the vHBA Template is being referenced. Dig into the docs and verify this. (maybe copy XML for SPT with and without this?)
                     self.handle.AddManagedObject(vnicfc, "vnicFcIf", 
                         {
                             "Name":"",
