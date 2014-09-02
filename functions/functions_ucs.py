@@ -196,8 +196,22 @@ class UcsFunctions:
 
         for classname, hostcontrol in classes.iteritems():
             try:
-                mo = self.handle.AddManagedObject(self.org, "epqosDefinition", {"Name":classname, "Dn":self.orgNameDN + "ep-qos-" + classname, "PolicyOwner":"local", "Descr":classname + " QoS Policy"})
-                mo_1 = self.handle.AddManagedObject(mo, "epqosEgress", {"Name":"", "Burst":"10240", "HostControl":hostcontrol, "Prio":classname.lower(), "Dn":self.orgNameDN + "ep-qos-" + classname + "/egress", "Rate":"line-rate"}, True)
+                mo = self.handle.AddManagedObject(self.org, "epqosDefinition", 
+                    {
+                        "Name":classname, 
+                        "Dn":self.orgNameDN + "ep-qos-" + classname, 
+                        "PolicyOwner":"local", 
+                        "Descr":classname + " QoS Policy"
+                    })
+                mo_1 = self.handle.AddManagedObject(mo, "epqosEgress", 
+                    {
+                        "Name":"", 
+                        "Burst":"10240", 
+                        "HostControl":hostcontrol, 
+                        "Prio":classname.lower(), 
+                        "Dn":self.orgNameDN + "ep-qos-" + classname + "/egress", 
+                        "Rate":"line-rate"
+                    }, True)
             except UcsException:
                 print "QoS Policy already exists" #convert to logging and TODO: need to handle this better. Need to poke around at the possible exception types        
 
@@ -308,7 +322,7 @@ class UcsFunctions:
                             "Name":vnicprefix + "-" + fabricID,
                             "Descr":vnicprefix + " - Fabric " + fabricID, # TODO: Need a better description method with current "vlangroups" mechanism
                             "SwitchId":fabricID, 
-                            "QosPolicyName":"BE", 
+                            "QosPolicyName":"Best-Effort", 
                             "NwCtrlPolicyName":"NTKCTRL-CDP", 
                             "StatsPolicyName":"default", 
                             "TemplType":"updating-template", 
