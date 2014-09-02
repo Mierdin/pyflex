@@ -29,5 +29,5 @@ class UcsWorker(FlexWorker):
         fxns.createBootPolicy()
         fxns.createVNICTemplates()
         fxns.createVHBATemplates()
-
+        fxns.createSpTemplate()
         #DEFINE REST OF UCS WORKFLOW HERE

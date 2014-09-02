@@ -83,6 +83,7 @@ ucs:
                 blockend: 0000-000000000100
     links: 4-link #How many connections will be used on a chassis IOM? This will be strictly enforced via the global chassis discovery policy
                 # options are 1-link, 2-link, 4-link, 8-link, or platform-max
+    sptname: SPT-TEST
 
 # VLANS
 #

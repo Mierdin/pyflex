@@ -98,6 +98,8 @@ class UcsFunctions:
         #TODO: Lots of shortcuts taken here. Need to come back and clean up this atrocious mess.
         pools = self.ucsconfig['ucs']['pools']
 
+        #TODO: Implement IP pool
+
         #MAC Pools
         for fabric in pools['mac']: #TODO: This loop is here for the future, but obviously since the name is statically set, this only works with a single pool per fabric, currently.
             try:
@@ -304,7 +306,7 @@ class UcsFunctions:
                             }, True)
 
                     except UcsException:
-                        print "vNIC '" + vnicprefix + "-" + fabricID + "' already contains VLAN " + vlanname #convert to logging and TODO: need to handle this better. Need to poke around at the possible exception types
+                        print "vNIC Template '" + vnicprefix + "-" + fabricID + "' already contains VLAN " + vlanname #convert to logging and TODO: need to handle this better. Need to poke around at the possible exception types
 
     def createVHBATemplates(self):
 
@@ -337,26 +339,174 @@ class UcsFunctions:
                         "Dn":self.orgNameDN + "san-conn-templ-ESX-VHBA-" + fabricID + "/if-default"
                     }, True)
             except UcsException:
-                print "vHBA 'ESX-VHBA-" + fabricID + "' already contains VSAN " + "FCoE_Fabric_" + fabricID #convert to logging and TODO: need to handle this better. Need to poke around at the possible exception types
+                print "vHBA Template 'ESX-VHBA-" + fabricID + "' already contains VSAN " + "FCoE_Fabric_" + fabricID #convert to logging and TODO: need to handle this better. Need to poke around at the possible exception types
 
 
-    def createSpTemplates(handle):
-        handle.StartTransaction()
-        obj = handle.GetManagedObject(None, OrgOrg.ClassId(), {OrgOrg.DN:"org-root/org-DI_DCA"})
-        mo = handle.AddManagedObject(obj, LsServer.ClassId(), {LsServer.EXT_IPPOOL_NAME:"ext-mgmt", LsServer.BOOT_POLICY_NAME:"BOOT_POLICY", LsServer.TYPE:"updating-template", LsServer.DYNAMIC_CON_POLICY_NAME:"", LsServer.DESCR:"ESXi Service Profile Template", LsServer.BIOS_PROFILE_NAME:"", LsServer.SRC_TEMPL_NAME:"", LsServer.EXT_IPSTATE:"pooled", LsServer.AGENT_POLICY_NAME:"", LsServer.LOCAL_DISK_POLICY_NAME:"default", LsServer.HOST_FW_POLICY_NAME:"HOST_FW_PKG", LsServer.MGMT_FW_POLICY_NAME:"", LsServer.MGMT_ACCESS_POLICY_NAME:"", LsServer.UUID:"0", LsServer.DN:"org-root/org-DI_DCA/ls-ESXi-SPT", LsServer.MAINT_POLICY_NAME:"MAINT-USERACK", LsServer.SCRUB_POLICY_NAME:"", LsServer.USR_LBL:"", LsServer.SOL_POLICY_NAME:"", LsServer.POWER_POLICY_NAME:"default", LsServer.VCON_PROFILE_NAME:"", LsServer.IDENT_POOL_NAME:"main-uuid-pool", LsServer.POLICY_OWNER:"local", LsServer.NAME:"ESXi-SPT", LsServer.STATS_POLICY_NAME:"default"})
-        mo_1 = handle.AddManagedObject(mo, LsVConAssign.ClassId(), {LsVConAssign.VNIC_NAME:"ESX-MGMT-A", LsVConAssign.TRANSPORT:"ethernet", LsVConAssign.ORDER:"1", LsVConAssign.ADMIN_VCON:"1", LsVConAssign.DN:"org-root/org-DI_DCA/ls-ESXi-SPT/assign-ethernet-vnic-ESX-MGMT-A"}, True)
-        mo_2 = handle.AddManagedObject(mo, LsVConAssign.ClassId(), {LsVConAssign.VNIC_NAME:"ESX-VHBA-A", LsVConAssign.TRANSPORT:"fc", LsVConAssign.ORDER:"1", LsVConAssign.ADMIN_VCON:"2", LsVConAssign.DN:"org-root/org-DI_DCA/ls-ESXi-SPT/assign-fc-vnic-ESX-VHBA-A"}, True)
-        mo_3 = handle.AddManagedObject(mo, VnicEther.ClassId(), {VnicEther.SWITCH_ID:"A", VnicEther.ADDR:"derived", VnicEther.STATS_POLICY_NAME:"default", VnicEther.ADAPTOR_PROFILE_NAME:"VMWare", VnicEther.DN:"org-root/org-DI_DCA/ls-ESXi-SPT/ether-ESX-MGMT-A", VnicEther.ORDER:"1", VnicEther.NW_CTRL_POLICY_NAME:"", VnicEther.QOS_POLICY_NAME:"", VnicEther.NAME:"ESX-MGMT-A", VnicEther.PIN_TO_GROUP_NAME:"", VnicEther.IDENT_POOL_NAME:"", VnicEther.ADMIN_VCON:"1", VnicEther.NW_TEMPL_NAME:"ESX-MGMT-A", VnicEther.MTU:"1500"})
-        mo_4 = handle.AddManagedObject(mo, VnicFc.ClassId(), {VnicFc.ADAPTOR_PROFILE_NAME:"VMWare", VnicFc.ADDR:"derived", VnicFc.ADMIN_VCON:"2", VnicFc.SWITCH_ID:"A", VnicFc.NW_TEMPL_NAME:"ESX-VHBA-A", VnicFc.PIN_TO_GROUP_NAME:"", VnicFc.PERS_BIND:"disabled", VnicFc.IDENT_POOL_NAME:"", VnicFc.ORDER:"1", VnicFc.PERS_BIND_CLEAR:"no", VnicFc.MAX_DATA_FIELD_SIZE:"2048", VnicFc.QOS_POLICY_NAME:"", VnicFc.NAME:"ESX-VHBA-A", VnicFc.DN:"org-root/org-DI_DCA/ls-ESXi-SPT/fc-ESX-VHBA-A", VnicFc.STATS_POLICY_NAME:"default"})
-        mo_4_1 = handle.AddManagedObject(mo_4, VnicFcIf.ClassId(), {VnicFcIf.NAME:"", VnicFcIf.DN:"org-root/org-DI_DCA/ls-ESXi-SPT/fc-ESX-VHBA-A/if-default"}, True)
-        mo_5 = handle.AddManagedObject(mo, VnicFcNode.ClassId(), {VnicFcNode.ADDR:"pool-derived", VnicFcNode.DN:"org-root/org-DI_DCA/ls-ESXi-SPT/fc-node", VnicFcNode.IDENT_POOL_NAME:"ESXi-WWNN-POOL"}, True)
-        mo_6 = handle.AddManagedObject(mo, LsRequirement.ClassId(), {LsRequirement.NAME:"main-server-pool", LsRequirement.RESTRICT_MIGRATION:"no", LsRequirement.DN:"org-root/org-DI_DCA/ls-ESXi-SPT/pn-req", LsRequirement.QUALIFIER:"B200-M3-QUAL"}, True)
-        mo_7 = handle.AddManagedObject(mo, LsPower.ClassId(), {LsPower.DN:"org-root/org-DI_DCA/ls-ESXi-SPT/power", LsPower.STATE:"admin-up"}, True)
-        mo_8 = handle.AddManagedObject(mo, FabricVCon.ClassId(), {FabricVCon.INST_TYPE:"manual", FabricVCon.SHARE:"shared", FabricVCon.SELECT:"all", FabricVCon.TRANSPORT:"ethernet,fc", FabricVCon.ID:"1", FabricVCon.PLACEMENT:"physical", FabricVCon.DN:"org-root/org-DI_DCA/ls-ESXi-SPT/vcon-1", FabricVCon.FABRIC:"NONE"}, True)
-        mo_9 = handle.AddManagedObject(mo, FabricVCon.ClassId(), {FabricVCon.INST_TYPE:"manual", FabricVCon.SHARE:"shared", FabricVCon.SELECT:"all", FabricVCon.TRANSPORT:"ethernet,fc", FabricVCon.ID:"2", FabricVCon.PLACEMENT:"physical", FabricVCon.DN:"org-root/org-DI_DCA/ls-ESXi-SPT/vcon-2", FabricVCon.FABRIC:"NONE"}, True)
-        mo_10 = handle.AddManagedObject(mo, FabricVCon.ClassId(), {FabricVCon.INST_TYPE:"manual", FabricVCon.SHARE:"shared", FabricVCon.SELECT:"all", FabricVCon.TRANSPORT:"ethernet,fc", FabricVCon.ID:"3", FabricVCon.PLACEMENT:"physical", FabricVCon.DN:"org-root/org-DI_DCA/ls-ESXi-SPT/vcon-3", FabricVCon.FABRIC:"NONE"}, True)
-        mo_11 = handle.AddManagedObject(mo, FabricVCon.ClassId(), {FabricVCon.INST_TYPE:"manual", FabricVCon.SHARE:"shared", FabricVCon.SELECT:"all", FabricVCon.TRANSPORT:"ethernet,fc", FabricVCon.ID:"4", FabricVCon.PLACEMENT:"physical", FabricVCon.DN:"org-root/org-DI_DCA/ls-ESXi-SPT/vcon-4", FabricVCon.FABRIC:"NONE"}, True)
-        handle.CompleteTransaction()
+    def createSpTemplate(self):
+        
+        sptname = self.ucsconfig['ucs']['sptname']
+
+        vnics = [ #Specify the order of vNICs/vHBAs (Python list insertion order is persistent)
+            "ESX-MGMT-A",
+            "ESX-MGMT-B",
+            "ESX-NFS-A",
+            "ESX-NFS-B",
+            "ESX-PROD-A",
+            "ESX-PROD-B",
+            "ESX-VHBA-A",
+            "ESX-VHBA-B"
+        ]
+        
+        #Create Service Profile Template
+        try:
+            mo = self.handle.AddManagedObject(self.org, "lsServer",  #TODO: Make sure to associate with server pool once that feature is implemented
+                {
+                    "Name":sptname, 
+                    "MgmtFwPolicyName":"", 
+                    "MaintPolicyName":"MAINT-USERACK", 
+                    "LocalDiskPolicyName":"", #Change to NO_LOCAL once policy is implemented 
+                    "Descr":"This is the main Service Profile Template for ESXi Servers", 
+                    "DynamicConPolicyName":"", 
+                    "Type":"updating-template", 
+                    "MgmtAccessPolicyName":"", 
+                    "VconProfileName":"", 
+                    "BiosProfileName":"", 
+                    "SrcTemplName":"", 
+                    "SolPolicyName":"", 
+                    "IdentPoolName":"ESXi-UUID", 
+                    "HostFwPolicyName":"HOST_FW_PKG", 
+                    "AgentPolicyName":"", 
+                    "ScrubPolicyName":"", 
+                    "ExtIPPoolName":"ext-mgmt", 
+                    "Uuid":"0", 
+                    "ExtIPState":"pooled", 
+                    "UsrLbl":"", 
+                    "PowerPolicyName":"default", 
+                    "Dn":self.orgNameDN + "ls-" + sptname, 
+                    "BootPolicyName":"BFS_POLICY", 
+                    "PolicyOwner":"local", 
+                    "StatsPolicyName":"default"
+                })
+        except UcsException:
+            print "SPT CREATION - Service Profile Template '" + sptname + "' already exists" #convert to logging and TODO: need to handle this better. Need to poke around at the possible exception types
+            mo = self.handle.GetManagedObject(None, None, {"Dn":self.orgNameDN + "ls-" + sptname}) #We need to do this because the creation of the vHBA, and it's VSANs, are separate actions
+
+        #Create vNIC VCON assignments
+        for vnic in vnics:
+
+            #This is a temporary measure to ensure the FC vcons are assigned last
+            transport = "ethernet"
+            if vnics.index(vnic) == 6 or vnics.index(vnic) == 7:
+                transport = "fc"
+
+            try:
+                self.handle.AddManagedObject(mo, "lsVConAssign", 
+                    {
+                        "AdminVcon":"any", 
+                        "VnicName":vnic, 
+                        "Transport":transport, 
+                        "Dn":self.orgNameDN + "ls-" + sptname + "/assign-ethernet-vnic-" + vnic, 
+                        "Order":str(vnics.index(vnic) + 1)
+                    }, True)
+            except UcsException:
+                print "SPT CREATION - vcon already mapped" #convert to logging and TODO: need to handle this better. Need to poke around at the possible exception types
+
+        for vnic in vnics:
+            
+            if vnics.index(vnic) <= 5:
+
+                try:
+                    #Add vNICs
+                    self.handle.AddManagedObject(mo, "vnicEther", 
+                        {
+                            "QosPolicyName":"", 
+                            "NwCtrlPolicyName":"", 
+                            "Name":vnic, 
+                            "IdentPoolName":"", 
+                            "Mtu":"9000", #TODO: Why does this property exist? The MTU is set in the template. Experiment with the use or non-use of this value
+                            "AdminVcon":"any", 
+                            "PinToGroupName":"", 
+                            "StatsPolicyName":"default", 
+                            "AdaptorProfileName":"VMWare", 
+                            "SwitchId":vnic[-1:], #TODO: Currently using string slicing to get Fabric ID. Might want to think about a different method.
+                            "Dn":self.orgNameDN + "ls-" + sptname + "/ether-" + vnic, 
+                            "Addr":"derived", 
+                            "Order":"1", 
+                            "NwTemplName":vnic
+                        })
+                except UcsException:
+                    print "SPT CREATION - vnic already mapped to SPT" #convert to logging and TODO: need to handle this better. Need to poke around at the possible exception types
+
+            else:
+
+                try:
+
+                    #Add vHBAs
+                    vnicfc = self.handle.AddManagedObject(mo, "vnicFc", 
+                        {
+                            "MaxDataFieldSize":"2048", 
+                            "Name":vnic, 
+                            "PersBindClear":"no", 
+                            "IdentPoolName":"", 
+                            "QosPolicyName":"", 
+                            "AdminVcon":"any", 
+                            "PersBind":"disabled", 
+                            "PinToGroupName":"", 
+                            "StatsPolicyName":"default", 
+                            "AdaptorProfileName":"VMWare", 
+                            "SwitchId":vnic[-1:], #TODO: Currently using string slicing to get Fabric ID. Might want to think about a different method.
+                            "Dn":self.orgNameDN + "ls-" + sptname + "/fc-" + vnic, 
+                            "Addr":"derived", 
+                            "Order":"7", 
+                            "NwTemplName":vnic
+                        })
+
+                    #TODO: Pretty sure this isn't needed. This should basically be ignored right now since the vHBA Template is being referenced. Dig into the docs and verify this.
+                    self.handle.AddManagedObject(vnicfc, "vnicFcIf", 
+                        {
+                            "Name":"",
+                            "Dn":self.orgNameDN + "ls-" + sptname + "/fc-" + vnic + "/if-default"
+                        }, True)
+                except UcsException:
+                    print "SPT CREATION - vhba already mapped to SPT" #convert to logging and TODO: need to handle this better. Need to poke around at the possible exception types
+        
+        #Set WWNN Pool
+        try:
+            self.handle.AddManagedObject(mo, "vnicFcNode", 
+                {
+                    "Addr":"pool-derived", 
+                    "Dn":self.orgNameDN + "ls-" + sptname + "/fc-node", 
+                    "IdentPoolName":"ESXi-WWNN"
+                }, True)
+        except UcsException:
+            print "SPT CREATION - WWNN pool set already" #convert to logging and TODO: need to handle this better. Need to poke around at the possible exception types
+        
+        #Set desired power state
+        try:
+            self.handle.AddManagedObject(mo, "lsPower", 
+                {
+                    "Dn":self.orgNameDN + "ls-" + sptname + "/power",
+                    "State":"admin-up"
+                }, True)
+        except UcsException:
+            print "SPT CREATION - desired power state set already" #convert to logging and TODO: need to handle this better. Need to poke around at the possible exception types
+
+        #Create VCONs
+        for i in range(1, 4):
+            try:
+                self.handle.AddManagedObject(mo, "fabricVCon", 
+                    {
+                        "Dn":self.orgNameDN + "ls-" + sptname + "/vcon-" + str(i), 
+                        "Select":"all", 
+                        "Transport":"ethernet,fc", 
+                        "Fabric":"NONE", 
+                        "Share":"shared", 
+                        "InstType":"auto", 
+                        "Id":str(i), 
+                        "Placement":"physical"
+                    }, True)
+            except UcsException:
+                print "SPT CREATION - VCON created already" #convert to logging and TODO: need to handle this better. Need to poke around at the possible exception types
 
     def spawnZerglings(handle):
         pass
