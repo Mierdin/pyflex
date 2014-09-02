@@ -1,51 +1,93 @@
+#!/usr/bin/env python
+""" pyflex
+
+    functions_ucs contains all functions pertinent to building,
+    configuring, or retrieving data from a Cisco UCS system
+"""
+
 from UcsSdk import *
 
 class UcsFunctions:
-    # Need to pull over comments from ps1 scripts where relevant
+    """ Class that contains all functions for Cisco UCS """
 
     FABRICS = ['A', 'B']
 
     def __init__(self, handle, ucsconfig):
         
         self.handle = handle
-        self.ucsconfig = ucsconfig #TODO: ucsconfig is currently just the entire config. Need to organize the config so that it's a little more pruned.
+
+        #TODO: ucsconfig is currently just the entire config. Prune this
+        self.ucsconfig = ucsconfig
 
         self.orgName = self.ucsconfig['general']['org']
 
         if self.orgName == "root":
             self.orgNameDN = "org-root/"
-            self.org = handle.GetManagedObject(None, OrgOrg.ClassId(), {OrgOrg.DN : self.orgNameDN})
         else:
             self.orgNameDN = "org-root/org-" + self.orgName + "/"
-            self.org = handle.GetManagedObject(None, OrgOrg.ClassId(), {OrgOrg.DN : self.orgNameDN})
 
-        #Even if self.org is the root org, it's nice to have a separate one for root, that we can use for things that should always refer to root. I.e. the default resource pools
-        self.rootorg = handle.GetManagedObject(None, OrgOrg.ClassId(), {OrgOrg.DN : "org-root/"})
+        self.org = handle.GetManagedObject(None, OrgOrg.ClassId(), 
+            {
+                OrgOrg.DN : self.orgNameDN
+            })
+
+        # When we need to refer to root regardless
+        self.rootorg = handle.GetManagedObject(None, OrgOrg.ClassId(), 
+            {
+                OrgOrg.DN : "org-root/"
+            })
 
     def ucsHousekeeping(self):
 
         try:
             #Add block to iscsi initiator pool
-            obj = self.handle.GetManagedObject(None, IppoolPool.ClassId(), {IppoolPool.DN:"org-root/ip-pool-iscsi-initiator-pool"})
-            self.handle.AddManagedObject(obj, IppoolBlock.ClassId(), {IppoolBlock.FROM:"1.1.1.1", IppoolBlock.TO:"1.1.1.1", IppoolBlock.DN:"org-root/ip-pool-iscsi-initiator-pool/block-1.1.1.1-1.1.1.1"})
+            obj = self.handle.GetManagedObject(None, 
+                IppoolPool.ClassId(), 
+                {
+                    IppoolPool.DN:"org-root/ip-pool-iscsi-initiator-pool"
+                })
+            self.handle.AddManagedObject(obj, IppoolBlock.ClassId(), 
+                {
+                    IppoolBlock.FROM:"1.1.1.1", 
+                    IppoolBlock.TO:"1.1.1.1", 
+                    IppoolBlock.DN:"org-root/ip-pool-iscsi-initiator-pool \
+                    /block-1.1.1.1-1.1.1.1"
+                })
         except UcsException:
             print "Already exists" #convert to logging and TODO: need to handle this better. Need to poke around at the possible exception types
 
         #Add suborg if needed
         if len(self.org) == 0 and self.orgName != "root" :
             try:
-                self.handle.AddManagedObject(self.rootorg, OrgOrg.ClassId(), {OrgOrg.DESCR:self.orgName, OrgOrg.NAME:self.orgName, OrgOrg.DN:"org-root/org-" + self.orgName})
+                self.handle.AddManagedObject(self.rootorg, OrgOrg.ClassId(), 
+                    {
+                        OrgOrg.DESCR:self.orgName,
+                        OrgOrg.NAME:self.orgName,
+                        OrgOrg.DN:"org-root/org-" + self.orgName
+                    })
             except UcsException:
-                print "Already exists" #convert to logging and TODO: need to handle this better. Need to poke around at the possible exception types
+                print "Sub-organization already exists" #convert to logging and TODO: need to handle this better. Need to poke around at the possible exception types
 
-            self.org = self.handle.GetManagedObject(None, OrgOrg.ClassId(), {OrgOrg.DN : self.orgNameDN})
+            self.org = self.handle.GetManagedObject(None, OrgOrg.ClassId(), 
+                {
+                    OrgOrg.DN : self.orgNameDN
+                })
         elif self.orgName == "root":
-            self.org = self.handle.GetManagedObject(None, OrgOrg.ClassId(), {OrgOrg.DN : "org-root/"})
-        else:
-            pass #In any other case, the org already exists, and is set correctly via this module's __init__ method
+            self.org = self.handle.GetManagedObject(None, OrgOrg.ClassId(), 
+                {
+                    OrgOrg.DN : "org-root/"
+                }
         
         #Set default maintenance policy to user-ack
-        self.handle.AddManagedObject(self.rootorg, LsmaintMaintPolicy.ClassId(), {LsmaintMaintPolicy.DN:"org-root/maint-default", LsmaintMaintPolicy.POLICY_OWNER:"local", LsmaintMaintPolicy.UPTIME_DISR:"user-ack", LsmaintMaintPolicy.DESCR:"", LsmaintMaintPolicy.SCHED_NAME:"default"}, True)
+        self.handle.AddManagedObject(self.rootorg, 
+            LsmaintMaintPolicy.ClassId(),
+            {
+                LsmaintMaintPolicy.DN:"org-root/maint-default", 
+                LsmaintMaintPolicy.POLICY_OWNER:"local", 
+                LsmaintMaintPolicy.UPTIME_DISR:"user-ack", 
+                LsmaintMaintPolicy.DESCR:"", 
+                LsmaintMaintPolicy.SCHED_NAME:"default"
+            }, True)
 
         #List default pools, and remove them
         objs = ["org-root/mac-pool-default",
@@ -58,12 +100,18 @@ class UcsFunctions:
 
         for thisobj in objs:
             try:
-                self.handle.RemoveManagedObject(self.handle.GetManagedObject(None, None, {"Dn":thisobj}))
+
+                self.handle.RemoveManagedObject(
+                    self.handle.GetManagedObject(None, None, 
+                        {
+                            "Dn":thisobj
+                        }))
+
             except UcsValidationException:
                 print thisobj + " already deleted"
                 pass #This pool was likely already deleted
 
-        #TODO: at this point, ext-mgmt is still empty. Consider implementing this here, or even better, in another method.
+        #TODO: Need to add a dummy block to ext-mgmt
 
     def implementPhysicalPortChanges(self):
         #method title obviously a working title :)
@@ -98,7 +146,7 @@ class UcsFunctions:
         #TODO: Lots of shortcuts taken here. Need to come back and clean up this atrocious mess.
         pools = self.ucsconfig['ucs']['pools']
 
-        #TODO: Implement IP pool
+        #TODO: Implement IP pool. Preferably in suborg, as housekeeping is populating ext-mgmt with dummy block
 
         #MAC Pools
         for fabric in pools['mac']: #TODO: This loop is here for the future, but obviously since the name is statically set, this only works with a single pool per fabric, currently.
@@ -553,8 +601,35 @@ class UcsFunctions:
             except UcsException:
                 print "SPT CREATION - VCON created already" #convert to logging and TODO: need to handle this better. Need to poke around at the possible exception types
 
-    def spawnZerglings(handle):
-        pass
+    def spawnZerglings(self):
+        
+        sptname = self.ucsconfig['ucs']['sptname']
+        numberToSpawn = self.ucsconfig['ucs']['numbertospawn']
+        spPrefix = self.ucsconfig['ucs']['spprefix']
+
+        dnSet = DnSet()
+
+        for i in range(1, numberToSpawn - 1):
+
+            if i <= 9:
+                iStr = "0" + str(i)
+            else:
+                iStr = str(i)
+
+
+            dn = Dn()
+            dn.setattr("Value", spPrefix + iStr)
+            print "Spawning " + spPrefix + iStr
+            dnSet.AddChild(dn)
+
+        print self.orgNameDN
+        print sptname
+        print self.orgNameDN[:-1]
+
+        self.handle.LsInstantiateNNamedTemplate(self.orgNameDN + "ls-" + sptname, dnSet, self.orgNameDN[:-1], YesOrNo.FALSE)
+
+        #self.handle.LsInstantiateNNamedTemplate("org-root/org-ORG_TEST/ls-SPT-TEST", dnSet, "org-root/org-ORG_TEST", YesOrNo.FALSE)
+
 
     def getFaults(handle, organization):
         """Gets current faults from UCS"""
