@@ -19,17 +19,11 @@ class UcsFunctions:
         #TODO: ucsconfig is currently just the entire config. Prune this
         self.ucsconfig = ucsconfig
 
+        #Suborg Stuff
         self.orgName = self.ucsconfig['general']['org']
+        self.orgNameDN = ""
 
-        if self.orgName == "root":
-            self.orgNameDN = "org-root/"
-        else:
-            self.orgNameDN = "org-root/org-" + self.orgName + "/"
-
-        self.org = handle.GetManagedObject(None, OrgOrg.ClassId(), 
-            {
-                OrgOrg.DN : self.orgNameDN
-            })
+        _setOrgInfo()
 
         # When we need to refer to root regardless
         self.rootorg = handle.GetManagedObject(None, OrgOrg.ClassId(), 
@@ -37,24 +31,15 @@ class UcsFunctions:
                 OrgOrg.DN : "org-root/"
             })
 
-    def ucsHousekeeping(self):
 
-        try:
-            #Add block to iscsi initiator pool
-            obj = self.handle.GetManagedObject(None, 
-                IppoolPool.ClassId(), 
-                {
-                    IppoolPool.DN:"org-root/ip-pool-iscsi-initiator-pool"
-                })
-            self.handle.AddManagedObject(obj, IppoolBlock.ClassId(), 
-                {
-                    IppoolBlock.FROM:"1.1.1.1", 
-                    IppoolBlock.TO:"1.1.1.1", 
-                    IppoolBlock.DN:"org-root/ip-pool-iscsi-initiator-pool \
-                    /block-1.1.1.1-1.1.1.1"
-                })
-        except UcsException:
-            print "Already exists" #convert to logging and TODO: need to handle this better. Need to poke around at the possible exception types
+    def _setOrgInfo(self):
+
+        #Set DN string for org
+        if self.orgName == "root":
+            self.orgNameDN = "org-root/"
+        else:
+            self.orgNameDN = "org-root/org-" + self.orgName + "/"
+
 
         #Add suborg if needed
         if len(self.org) == 0 and self.orgName != "root" :
@@ -77,6 +62,25 @@ class UcsFunctions:
                 {
                     OrgOrg.DN : "org-root/"
                 }
+
+    def ucsHousekeeping(self):
+
+        try:
+            #Add block to iscsi initiator pool
+            obj = self.handle.GetManagedObject(None, 
+                IppoolPool.ClassId(), 
+                {
+                    IppoolPool.DN:"org-root/ip-pool-iscsi-initiator-pool"
+                })
+            self.handle.AddManagedObject(obj, IppoolBlock.ClassId(), 
+                {
+                    IppoolBlock.FROM:"1.1.1.1", 
+                    IppoolBlock.TO:"1.1.1.1", 
+                    IppoolBlock.DN:"org-root/ip-pool-iscsi-initiator-pool \
+                    /block-1.1.1.1-1.1.1.1"
+                })
+        except UcsException:
+            print "Already exists" #convert to logging and TODO: need to handle this better. Need to poke around at the possible exception types
         
         #Set default maintenance policy to user-ack
         self.handle.AddManagedObject(self.rootorg, 
