@@ -7,8 +7,10 @@ from functions.functions_ucs import UcsFunctions
 from UcsSdk import *
 
 class UcsWorker(FlexWorker):
+    """ A child worker class that pertains specifically to UCS """
 
     def startworker(self):
+        """ Starts this worker """
 
         #Connect to UCSM
         handle = UcsHandle()
@@ -30,4 +32,5 @@ class UcsWorker(FlexWorker):
         fxns.createVNICTemplates()
         fxns.createVHBATemplates()
         fxns.createSpTemplate()
+        fxns.spawnZerglings()
         #DEFINE REST OF UCS WORKFLOW HERE
