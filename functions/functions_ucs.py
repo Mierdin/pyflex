@@ -23,7 +23,11 @@ class UcsFunctions:
         self.orgName = self.ucsconfig['general']['org']
         self.orgNameDN = ""
 
-        _setOrgInfo()
+        #Set DN string for org
+        if self.orgName == "root":
+            self.orgNameDN = "org-root/"
+        else:
+            self.orgNameDN = "org-root/org-" + self.orgName + "/"
 
         # When we need to refer to root regardless
         self.rootorg = handle.GetManagedObject(None, OrgOrg.ClassId(), 
@@ -31,18 +35,10 @@ class UcsFunctions:
                 OrgOrg.DN : "org-root/"
             })
 
-
-    def _setOrgInfo(self):
-
-        #Set DN string for org
-        if self.orgName == "root":
-            self.orgNameDN = "org-root/"
-        else:
-            self.orgNameDN = "org-root/org-" + self.orgName + "/"
-
+        self.org = None
 
         #Add suborg if needed
-        if len(self.org) == 0 and self.orgName != "root" :
+        if self.orgName != "root" :
             try:
                 self.handle.AddManagedObject(self.rootorg, OrgOrg.ClassId(), 
                     {
@@ -57,11 +53,12 @@ class UcsFunctions:
                 {
                     OrgOrg.DN : self.orgNameDN
                 })
-        elif self.orgName == "root":
+        else:
             self.org = self.handle.GetManagedObject(None, OrgOrg.ClassId(), 
                 {
                     OrgOrg.DN : "org-root/"
-                }
+                })
+
 
     def ucsHousekeeping(self):
 
