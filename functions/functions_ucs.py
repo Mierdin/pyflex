@@ -608,27 +608,27 @@ class UcsFunctions:
         numberToSpawn = self.ucsconfig['ucs']['numbertospawn']
         spPrefix = self.ucsconfig['ucs']['spprefix']
 
-        dnSet = DnSet()
+        #TODO: The below is commented out because it's not quite working. There are a few methods for instantiating service profiles, and what's not commented right now is the
+        #only way I've gotten working thus far. More work on this later.
 
-        for i in range(1, numberToSpawn - 1):
+        #dnSet = DnSet()
 
-            if i <= 9:
-                iStr = "0" + str(i)
-            else:
-                iStr = str(i)
+        #for i in range(1, numberToSpawn - 1):
+
+        #    if i <= 9:
+        #        iStr = "0" + str(i)
+        #    else:
+        #        iStr = str(i)
 
 
-            dn = Dn()
-            dn.setattr("Value", spPrefix + iStr)
-            print "Spawning " + spPrefix + iStr
-            dnSet.AddChild(dn)
+        #    dn = Dn()
+        #    dn.setattr("Value", spPrefix + iStr)
+        #    print "Spawning " + spPrefix + iStr
+        #    dnSet.AddChild(dn)
 
-        print self.orgNameDN
-        print sptname
-        print self.orgNameDN[:-1]
-
-        self.handle.LsInstantiateNNamedTemplate(self.orgNameDN + "ls-" + sptname, dnSet, self.orgNameDN[:-1], YesOrNo.FALSE)
-
+        self.handle.LsInstantiateNTemplate(self.orgNameDN + "ls-" + sptname, numberToSpawn, spPrefix, self.orgNameDN[:-1], YesOrNo.FALSE)
+        
+        #self.handle.LsInstantiateNTemplate(dn, inNumberOf, inServerNamePrefixOrEmpty, inTargetOrg, inHierarchical=YesOrNo.FALSE, dumpXml=None)
         #self.handle.LsInstantiateNNamedTemplate("org-root/org-ORG_TEST/ls-SPT-TEST", dnSet, "org-root/org-ORG_TEST", YesOrNo.FALSE)
 
 
