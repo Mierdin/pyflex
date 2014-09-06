@@ -59,6 +59,8 @@ class UcsFunctions:
                     OrgOrg.DN : "org-root/"
                 })
 
+        print "Instantiated UcsFunctions"
+
 
     def ucsHousekeeping(self):
 
@@ -128,17 +130,40 @@ class UcsFunctions:
             if group != 'storage': #Don't want to explicitly add FCoE VLANs here, that's done in the VSAN creation
                 for vlanid, vlanname in vlans[group].iteritems():
                     try:
-                        self.handle.AddManagedObject(obj, "fabricVlan", {"Name":vlanname, "PubNwName":"", "DefaultNet":"no", "PolicyOwner":"local", "CompressionType":"included", "Dn":"fabric/lan/net-" + vlanname, "McastPolicyName":"", "Id":str(vlanid), "Sharing":"none"})
+                        self.handle.AddManagedObject(obj, "fabricVlan", 
+                            {
+                                "Name":vlanname, 
+                                "PubNwName":"", 
+                                "DefaultNet":"no", 
+                                "PolicyOwner":"local", 
+                                "CompressionType":"included", 
+                                "Dn":"fabric/lan/net-" + vlanname, 
+                                "McastPolicyName":"", 
+                                "Id":str(vlanid), 
+                                "Sharing":"none"
+                            })
                     except UcsException:
                         print "Already exists" #convert to logging and TODO: need to handle this better. Need to poke around at the possible exception types
 
         vsans = self.ucsconfig['vsans']
 
         for fabric in vsans:
-            obj = self.handle.GetManagedObject(None, None, {"Dn":"fabric/san/" + fabric.upper()}) #Note: This is inside the for loop because VSANs are generally per-fabric, and VLANs are not.
+            obj = self.handle.GetManagedObject(None, None, 
+                {
+                    "Dn":"fabric/san/" + fabric.upper()
+                }) #Note: This is inside the for loop because VSANs are generally per-fabric, and VLANs are not.
             for vsanid, vsanname in vsans[fabric].iteritems():
                 try:
-                    self.handle.AddManagedObject(obj, "fabricVsan", {"Name":vsanname, "ZoningState":"disabled", "PolicyOwner":"local", "FcZoneSharingMode":"coalesce", "FcoeVlan":str(vsanid), "Dn":"fabric/san/" + fabric.upper() + "/", "Id":str(vsanid)})
+                    self.handle.AddManagedObject(obj, "fabricVsan", 
+                        {
+                            "Name":vsanname, 
+                            "ZoningState":"disabled", 
+                            "PolicyOwner":"local", 
+                            "FcZoneSharingMode":"coalesce", 
+                            "FcoeVlan":str(vsanid), 
+                            "Dn":"fabric/san/" + fabric.upper() + "/", 
+                            "Id":str(vsanid)
+                        })
                 except UcsException:
                     print "Already exists" #convert to logging and TODO: need to handle this better. Need to poke around at the possible exception types
 
@@ -152,57 +177,147 @@ class UcsFunctions:
         #MAC Pools
         for fabric in pools['mac']: #TODO: This loop is here for the future, but obviously since the name is statically set, this only works with a single pool per fabric, currently.
             try:
-                mo = self.handle.AddManagedObject(self.org, "macpoolPool", {"Descr":"ESXi Servers Fabric " + fabric, "Name":"ESXi-MAC-" + fabric, "AssignmentOrder":"sequential", "PolicyOwner":"local", "Dn":self.orgNameDN + "mac-pool-" + "ESXi-MAC-" + fabric})
+                mo = self.handle.AddManagedObject(self.org, "macpoolPool", 
+                    {
+                        "Descr":"ESXi Servers Fabric " + fabric, 
+                        "Name":"ESXi-MAC-" + fabric, 
+                        "AssignmentOrder":"sequential", 
+                        "PolicyOwner":"local", 
+                        "Dn":self.orgNameDN + "mac-pool-" + \
+                            "ESXi-MAC-" + fabric
+                    })
             except UcsException:
                 print "MAC Pool already exists" #convert to logging and TODO: need to handle this better. Need to poke around at the possible exception types
-                mo = self.handle.GetManagedObject(None, None, {"Dn":self.orgNameDN + "mac-pool-ESXi-MAC-" + fabric}) #We need to do this because the creation of the pool, and it's blocks, are separate actions
+                mo = self.handle.GetManagedObject(None, None, 
+                {
+                    "Dn":self.orgNameDN + "mac-pool-ESXi-MAC-" + fabric
+                }) #We need to do this because the creation of the pool, and it's blocks, are separate actions
             
             try:
-                mo_1 = self.handle.AddManagedObject(mo, "macpoolBlock", {"From":pools['mac'][fabric]['blockbegin'], "To":pools['mac'][fabric]['blockend'], "Dn":self.orgNameDN + "mac-pool-ESXi-MAC-" + fabric + "/block-" + pools['mac'][fabric]['blockbegin'] + "-"  + pools['mac'][fabric]['blockend']})
+                mo_1 = self.handle.AddManagedObject(mo, "macpoolBlock", 
+                    {
+                        "From":pools['mac'][fabric]['blockbegin'], 
+                        "To":pools['mac'][fabric]['blockend'], 
+                        "Dn":self.orgNameDN + "mac-pool-ESXi-MAC-" + \
+                            fabric + "/block-" + \
+                            pools['mac'][fabric]['blockbegin'] + \
+                                "-"  + pools['mac'][fabric]['blockend']
+                    })
             except UcsException:
                 print "MAC Pool block already exists" #convert to logging and TODO: need to handle this better. Need to poke around at the possible exception types
 
         #WWPN Pools
         for fabric in pools['wwpn']:
             try:
-                mo = self.handle.AddManagedObject(self.org, "fcpoolInitiators", {"Descr":"ESXi Servers Fabric " + fabric, "Name":"ESXi-WWPN-" + fabric, "Purpose":"port-wwn-assignment", "PolicyOwner":"local", "AssignmentOrder":"sequential", "Dn":self.orgNameDN + "wwn-pool-ESXi-WWPN"})
+                mo = self.handle.AddManagedObject(self.org, "fcpoolInitiators", 
+                    {
+                        "Descr":"ESXi Servers Fabric " + fabric, 
+                        "Name":"ESXi-WWPN-" + fabric, 
+                        "Purpose":"port-wwn-assignment", 
+                        "PolicyOwner":"local", 
+                        "AssignmentOrder":"sequential", 
+                        "Dn":self.orgNameDN + "wwn-pool-ESXi-WWPN"
+                    })
             except UcsException:
                 print "WWPN Pool already exists" #convert to logging and TODO: need to handle this better. Need to poke around at the possible exception types
-                mo = self.handle.GetManagedObject(None, None, {"Dn":self.orgNameDN + "wwn-pool-ESXi-WWPN-" + fabric}) #We need to do this because the creation of the pool, and it's blocks, are separate actions
+                mo = self.handle.GetManagedObject(None, None, 
+                    {
+                        "Dn":self.orgNameDN + "wwn-pool-ESXi-WWPN-" + fabric
+                    }) #We need to do this because the creation of the pool, and it's blocks, are separate actions
 
             try:
-                mo_1 = self.handle.AddManagedObject(mo, "fcpoolBlock", {"From":pools['wwpn'][fabric]['blockbegin'], "To":pools['wwpn'][fabric]['blockend'], "Dn":self.orgNameDN + "wwn-pool-ESXi-WWPN-" + fabric + "/block-" + pools['wwpn'][fabric]['blockbegin'] + "-" + pools['wwpn'][fabric]['blockend']})
+                mo_1 = self.handle.AddManagedObject(mo, "fcpoolBlock", 
+                    {
+                        "From":pools['wwpn'][fabric]['blockbegin'], 
+                        "To":pools['wwpn'][fabric]['blockend'], 
+                        "Dn":self.orgNameDN + "wwn-pool-ESXi-WWPN-" + \
+                            fabric + "/block-" + \
+                            pools['wwpn'][fabric]['blockbegin'] + \
+                            "-" + pools['wwpn'][fabric]['blockend']
+                    })
             except UcsException:
                 print "WWPN Pool block already exists" #convert to logging and TODO: need to handle this better. Need to poke around at the possible exception types
         
         #WWNN Pools
         try:   
-            mo = self.handle.AddManagedObject(self.org, "fcpoolInitiators", {"Descr":"ESXi Servers", "Name":"ESXi-WWNN", "Purpose":"node-wwn-assignment", "PolicyOwner":"local", "AssignmentOrder":"sequential", "Dn":self.orgNameDN + "wwn-pool-ESXi-WWNN"})
+            mo = self.handle.AddManagedObject(self.org, "fcpoolInitiators", 
+                {
+                    "Descr":"ESXi Servers", 
+                    "Name":"ESXi-WWNN", 
+                    "Purpose":"node-wwn-assignment", 
+                    "PolicyOwner":"local", 
+                    "AssignmentOrder":"sequential", 
+                    "Dn":self.orgNameDN + "wwn-pool-ESXi-WWNN"
+                })
         except UcsException:
             print "WWNN Pool already exists" #convert to logging and TODO: need to handle this better. Need to poke around at the possible exception types
-            mo = self.handle.GetManagedObject(None, None, {"Dn":self.orgNameDN + "wwn-pool-ESXi-WWNN"}) #We need to do this because the creation of the pool, and it's blocks, are separate actions
+            mo = self.handle.GetManagedObject(None, None, 
+                {
+                    "Dn":self.orgNameDN + "wwn-pool-ESXi-WWNN"
+                }) #We need to do this because the creation of the pool, and it's blocks, are separate actions
         try:
-            mo_1 = self.handle.AddManagedObject(mo, "fcpoolBlock", {"From":pools['wwnn']['blockbegin'], "To":pools['wwnn']['blockend'], "Dn":self.orgNameDN + "wwn-pool-ESXi-WWNN/block-" + pools['wwnn']['blockbegin'] + "-" + pools['wwnn']['blockend']})
+            mo_1 = self.handle.AddManagedObject(mo, "fcpoolBlock", 
+                {
+                    "From":pools['wwnn']['blockbegin'], 
+                    "To":pools['wwnn']['blockend'], 
+                    "Dn":self.orgNameDN + "wwn-pool-ESXi-WWNN/block-" + \
+                    pools['wwnn']['blockbegin'] + "-" + \
+                    pools['wwnn']['blockend']
+                })
         except UcsException:
             print "WWNN Pool block already exists" #convert to logging and TODO: need to handle this better. Need to poke around at the possible exception types
         
         #UUID Pools
         try:
-            mo = self.handle.AddManagedObject(self.org, "uuidpoolPool", {"Descr":"ESXi Servers", "Name":"ESXi-UUID", "Dn":self.orgNameDN + "uuid-pool-ESXi-UUID", "PolicyOwner":"local", "Prefix":"derived", "AssignmentOrder":"sequential"})
+            mo = self.handle.AddManagedObject(self.org, "uuidpoolPool", 
+                {
+                    "Descr":"ESXi Servers", 
+                    "Name":"ESXi-UUID", 
+                    "Dn":self.orgNameDN + "uuid-pool-ESXi-UUID", 
+                    "PolicyOwner":"local", 
+                    "Prefix":"derived", 
+                    "AssignmentOrder":"sequential"
+                })
         except UcsException:
             print "UUID Pool already exists" #convert to logging and TODO: need to handle this better. Need to poke around at the possible exception types
-            mo = self.handle.GetManagedObject(None, None, {"Dn":self.orgNameDN + "wwn-pool-ESXi-UUID"}) #We need to do this because the creation of the pool, and it's blocks, are separate actions        
+            mo = self.handle.GetManagedObject(None, None, 
+                {
+                    "Dn":self.orgNameDN + "wwn-pool-ESXi-UUID"
+                }) #We need to do this because the creation of the pool, and it's blocks, are separate actions        
 
         try:
-            mo_1 = self.handle.AddManagedObject(mo, "uuidpoolBlock", {"From":pools['uuid']['blockbegin'], "To":pools['uuid']['blockend'], "Dn":self.orgNameDN + "uuid-pool-ESXi-UUID/block-from-" + pools['uuid']['blockbegin'] + "-to-" + pools['uuid']['blockend']})
+            mo_1 = self.handle.AddManagedObject(mo, "uuidpoolBlock", 
+                {
+                    "From":pools['uuid']['blockbegin'], 
+                    "To":pools['uuid']['blockend'], 
+                    "Dn":self.orgNameDN + \
+                    "uuid-pool-ESXi-UUID/block-from-" + \
+                    pools['uuid']['blockbegin'] + \
+                    "-to-" + pools['uuid']['blockend']
+                })
         except UcsException:
             print "UUID Pool block already exists" #convert to logging and TODO: need to handle this better. Need to poke around at the possible exception types
 
 
     def ucsCreatePolicies(self):
         #Create/set global policies
-        self.handle.AddManagedObject(self.rootorg, "computePsuPolicy", {"PolicyOwner":"local", "Redundancy":"grid", "Dn":"org-root/psu-policy", "Descr":""}, True)
-        self.handle.AddManagedObject(self.rootorg, "computeChassisDiscPolicy", {"Descr":"", "PolicyOwner":"local", "LinkAggregationPref":"port-channel", "Action":str(self.ucsconfig['ucs']['links']), "Name":"", "Rebalance":"user-acknowledged", "Dn":"org-root/chassis-discovery"}, True)
+        self.handle.AddManagedObject(self.rootorg, "computePsuPolicy", 
+            {
+                "PolicyOwner":"local", 
+                "Redundancy":"grid", 
+                "Dn":"org-root/psu-policy", 
+                "Descr":""
+            }, True)
+        self.handle.AddManagedObject(self.rootorg, "computeChassisDiscPolicy", 
+            {
+                "Descr":"", 
+                "PolicyOwner":"local", 
+                "LinkAggregationPref":"port-channel", 
+                "Action":str(self.ucsconfig['ucs']['links']), 
+                "Name":"", 
+                "Rebalance":"user-acknowledged", 
+                "Dn":"org-root/chassis-discovery"
+            }, True)
 
         qos = self.ucsconfig['qos']
         defmtu = str(qos['defaultmtu'])
@@ -213,10 +328,48 @@ class UcsFunctions:
 
         #Global QoS policy
         obj = self.handle.GetManagedObject(None, None, {"Dn":"fabric/lan"})
-        mo = self.handle.AddManagedObject(obj, "qosclassDefinition", {"PolicyOwner":"local", "Dn":"fabric/lan/classes", "Descr":""}, True)
-        self.handle.AddManagedObject(mo, "qosclassEthClassified", {"Mtu":"normal", "Name":"", "Dn":"fabric/lan/classes/class-gold", "Weight":"9", "AdminState":"enabled", "Cos":"4", "Drop":"drop", "MulticastOptimize":"no"}, True)
-        self.handle.AddManagedObject(mo, "qosclassEthClassified", {"Mtu":"normal", "Name":"", "Dn":"fabric/lan/classes/class-silver", "Weight":"8", "AdminState":"enabled", "Cos":"2", "Drop":"drop", "MulticastOptimize":"no"}, True)
-        self.handle.AddManagedObject(mo, "qosclassEthClassified", {"Mtu":"normal", "Name":"", "Dn":"fabric/lan/classes/class-bronze", "Weight":"7", "AdminState":"enabled", "Cos":"1", "Drop":"drop", "MulticastOptimize":"no"}, True)
+
+        mo = self.handle.AddManagedObject(obj, "qosclassDefinition", 
+            {
+                "PolicyOwner":"local", 
+                "Dn":"fabric/lan/classes", 
+                "Descr":""
+            }, True)
+
+        self.handle.AddManagedObject(mo, "qosclassEthClassified", 
+            {
+                "Mtu":"normal", 
+                "Name":"", 
+                "Dn":"fabric/lan/classes/class-gold", 
+                "Weight":"9", 
+                "AdminState":"enabled", 
+                "Cos":"4", 
+                "Drop":"drop", 
+                "MulticastOptimize":"no"
+            }, True)
+
+        self.handle.AddManagedObject(mo, "qosclassEthClassified", 
+            {
+                "Mtu":"normal", 
+                "Name":"", 
+                "Dn":"fabric/lan/classes/class-silver", 
+                "Weight":"8", 
+                "AdminState":"enabled", 
+                "Cos":"2", 
+                "Drop":"drop", 
+                "MulticastOptimize":"no"
+            }, True)
+        self.handle.AddManagedObject(mo, "qosclassEthClassified", 
+            {
+                "Mtu":"normal", 
+                "Name":"", 
+                "Dn":"fabric/lan/classes/class-bronze", 
+                "Weight":"7", 
+                "AdminState":"enabled", 
+                "Cos":"1", 
+                "Drop":"drop", 
+                "MulticastOptimize":"no"
+            }, True)
         self.handle.AddManagedObject(mo, "qosclassEthBE",
             {
                 "Name":"",
@@ -303,20 +456,56 @@ class UcsFunctions:
 
         #Create Host Firmware Package
         try:
-            self.handle.AddManagedObject(self.org, "firmwareComputeHostPack", {"Name":"HOST_FW_PKG", "BladeBundleVersion":"", "RackBundleVersion":"", "PolicyOwner":"local", "Dn":self.orgNameDN + "fw-host-pack-HOST_FW_PKG", "Mode":"staged", "IgnoreCompCheck":"yes", "StageSize":"0", "Descr":"Host Firmware Package", "UpdateTrigger":"immediate"})
+            self.handle.AddManagedObject(self.org, "firmwareComputeHostPack", 
+                {
+                    "Name":"HOST_FW_PKG", 
+                    "BladeBundleVersion":"", 
+                    "RackBundleVersion":"", 
+                    "PolicyOwner":"local", 
+                    "Dn":self.orgNameDN + "fw-host-pack-HOST_FW_PKG", 
+                    "Mode":"staged", 
+                    "IgnoreCompCheck":"yes", 
+                    "StageSize":"0", 
+                    "Descr":"Host Firmware Package", 
+                    "UpdateTrigger":"immediate"
+                })
         except UcsException:
             print "Host Firmware Package already exists" #convert to logging and TODO: need to handle this better. Need to poke around at the possible exception types
         
         #Create Maintenance Policy
         try:
-            self.handle.AddManagedObject(self.org, "lsmaintMaintPolicy", {"Descr":"User-Ack Maintenance Policy", "SchedName":"", "Name":"MAINT-USERACK", "Dn":self.orgNameDN + "maint-MAINT-USERACK", "PolicyOwner":"local", "UptimeDisr":"user-ack"})
+            self.handle.AddManagedObject(self.org, "lsmaintMaintPolicy", 
+                {
+                    "Descr":"User-Ack Maintenance Policy", 
+                    "SchedName":"", 
+                    "Name":"MAINT-USERACK", 
+                    "Dn":self.orgNameDN + "maint-MAINT-USERACK", 
+                    "PolicyOwner":"local", 
+                    "UptimeDisr":"user-ack"
+                })
         except UcsException:
             print "Maintenance Policy already exists" #convert to logging and TODO: need to handle this better. Need to poke around at the possible exception types
         
         #Create Network Control Policy (enable CDP)
         try:
-            mo = self.handle.AddManagedObject(self.org, "nwctrlDefinition", {"Name":"NTKCTRL-CDP", "Cdp":"enabled", "Dn":self.orgNameDN + "nwctrl-NTKCTRL-CDP", "PolicyOwner":"local", "MacRegisterMode":"only-native-vlan", "UplinkFailAction":"link-down", "Descr":"Network Control Polcy - CDP Enabled"})
-            mo_1 = self.handle.AddManagedObject(mo, "dpsecMac", {"Name":"", "Dn":self.orgNameDN + "nwctrl-NTKCTRL-CDP/mac-sec", "Forge":"allow", "PolicyOwner":"local", "Descr":""}, True)
+            mo = self.handle.AddManagedObject(self.org, "nwctrlDefinition", 
+                {
+                    "Name":"NTKCTRL-CDP", 
+                    "Cdp":"enabled", 
+                    "Dn":self.orgNameDN + "nwctrl-NTKCTRL-CDP", 
+                    "PolicyOwner":"local", 
+                    "MacRegisterMode":"only-native-vlan", 
+                    "UplinkFailAction":"link-down", 
+                    "Descr":"Network Control Polcy - CDP Enabled"
+                })
+            mo_1 = self.handle.AddManagedObject(mo, "dpsecMac", 
+                {
+                    "Name":"", 
+                    "Dn":self.orgNameDN + "nwctrl-NTKCTRL-CDP/mac-sec", 
+                    "Forge":"allow", 
+                    "PolicyOwner":"local", 
+                    "Descr":""
+                }, True)
         except UcsException:
             print "Network Control Policy already exists" #convert to logging and TODO: need to handle this better. Need to poke around at the possible exception types
 
@@ -328,23 +517,74 @@ class UcsFunctions:
         #TODO: I decided to wrap the entire thing in a try block....may break it out further once simplified, having a try block per line is a bit much right now. We'll just 
         try:
             #Create Boot Policy
-            mo = self.handle.AddManagedObject(self.org, "lsbootPolicy", {"Name":"BFS_POLICY", "EnforceVnicName":"yes", "Dn":self.orgNameDN + "boot-policy-BFS_POLICY", "PolicyOwner":"local", "RebootOnUpdate":"no", "Descr":"Boot Policy (Boot From SAN)"})
+            mo = self.handle.AddManagedObject(self.org, "lsbootPolicy", 
+                {
+                    "Name":"BFS_POLICY", 
+                    "EnforceVnicName":"yes", 
+                    "Dn":self.orgNameDN + "boot-policy-BFS_POLICY", 
+                    "PolicyOwner":"local", 
+                    "RebootOnUpdate":"no", 
+                    "Descr":"Boot Policy (Boot From SAN)"
+                })
 
             #Add CD-ROM Boot
-            self.handle.AddManagedObject(mo, "lsbootVirtualMedia", {"Access":"read-only", "Dn":self.orgNameDN + "boot-policy-BFS_POLICY/read-only-vm", "Order":"1"})
+            self.handle.AddManagedObject(mo, "lsbootVirtualMedia", 
+                {
+                    "Access":"read-only", 
+                    "Dn":self.orgNameDN + "boot-policy-BFS_POLICY/read-only-vm", 
+                    "Order":"1"
+                })
 
             #Add SAN Boot
-            mo_2 = self.handle.AddManagedObject(mo, "lsbootStorage", {"Order":"2", "Dn":self.orgNameDN + "boot-policy-BFS_POLICY/storage"}, True)
+            mo_2 = self.handle.AddManagedObject(mo, "lsbootStorage", 
+                {
+                    "Order":"2", 
+                    "Dn":self.orgNameDN + "boot-policy-BFS_POLICY/storage"
+                }, True)
 
-            #Add SAN Boot Target Fabric A
-            mo_2_1 = self.handle.AddManagedObject(mo_2, "lsbootSanImage", {"VnicName":"ESX-VHBA-A", "Type":"primary", "Dn":self.orgNameDN + "boot-policy-BFS_POLICY/storage/san-primary"})
-            mo_2_1_1 = self.handle.AddManagedObject(mo_2_1, "lsbootSanImagePath", {"Dn":self.orgNameDN + "boot-policy-BFS_POLICY/storage/san-primary/path-primary", "Type":"primary", "Lun":"0", "Wwn":targets['A'][0]})
-            mo_2_1_2 = self.handle.AddManagedObject(mo_2_1, "lsbootSanImagePath", {"Dn":self.orgNameDN + "boot-policy-BFS_POLICY/storage/san-primary/path-secondary", "Type":"secondary", "Lun":"0", "Wwn":targets['A'][1]})
+            #Add SAN Boot Targets Fabric A
+            mo_2_1 = self.handle.AddManagedObject(mo_2, "lsbootSanImage", 
+                {
+                    "VnicName":"ESX-VHBA-A", 
+                    "Type":"primary", 
+                    "Dn":self.orgNameDN + "boot-policy-BFS_POLICY/storage/san-primary"
+                })
+            mo_2_1_1 = self.handle.AddManagedObject(mo_2_1, "lsbootSanImagePath", 
+                {
+                    "Dn":self.orgNameDN + "boot-policy-BFS_POLICY/storage/san-primary/path-primary", 
+                    "Type":"primary", 
+                    "Lun":"0", 
+                    "Wwn":targets['A'][0]
+                })
+            mo_2_1_2 = self.handle.AddManagedObject(mo_2_1, "lsbootSanImagePath", 
+                {
+                    "Dn":self.orgNameDN + "boot-policy-BFS_POLICY/storage/san-primary/path-secondary", 
+                    "Type":"secondary", 
+                    "Lun":"0", 
+                    "Wwn":targets['A'][1]
+                })
 
-            #Add SAN Boot Target Fabric B
-            mo_2_2 = self.handle.AddManagedObject(mo_2, "lsbootSanImage", {"VnicName":"ESX-VHBA-B", "Type":"secondary", "Dn":self.orgNameDN + "boot-policy-BFS_POLICY/storage/san-secondary"})
-            mo_2_2_1 = self.handle.AddManagedObject(mo_2_2, "lsbootSanImagePath", {"Dn":self.orgNameDN + "boot-policy-BFS_POLICY/storage/san-secondary/path-primary", "Type":"primary", "Lun":"0", "Wwn":targets['B'][0]})
-            mo_2_2_2 = self.handle.AddManagedObject(mo_2_2, "lsbootSanImagePath", {"Dn":self.orgNameDN + "boot-policy-BFS_POLICY/storage/san-secondary/path-secondary", "Type":"secondary", "Lun":"0", "Wwn":targets['B'][1]})
+            #Add SAN Boot Targets Fabric B
+            mo_2_2 = self.handle.AddManagedObject(mo_2, "lsbootSanImage", 
+                {
+                    "VnicName":"ESX-VHBA-B", 
+                    "Type":"secondary", 
+                    "Dn":self.orgNameDN + "boot-policy-BFS_POLICY/storage/san-secondary"
+                })
+            mo_2_2_1 = self.handle.AddManagedObject(mo_2_2, "lsbootSanImagePath", 
+                {
+                    "Dn":self.orgNameDN + "boot-policy-BFS_POLICY/storage/san-secondary/path-primary", 
+                    "Type":"primary", 
+                    "Lun":"0", 
+                    "Wwn":targets['B'][0]
+                })
+            mo_2_2_2 = self.handle.AddManagedObject(mo_2_2, "lsbootSanImagePath", 
+                {
+                    "Dn":self.orgNameDN + "boot-policy-BFS_POLICY/storage/san-secondary/path-secondary", 
+                    "Type":"secondary", 
+                    "Lun":"0", 
+                    "Wwn":targets['B'][1]
+                })
        
         except UcsException:
             print "Boot Policy already exists" #convert to logging and TODO: need to handle this better. Need to poke around at the possible exception types
@@ -383,7 +623,11 @@ class UcsFunctions:
                         })
                 except UcsException:
                     print "vNIC '" + vnicprefix + "-" + fabricID + "' already exists" #convert to logging and TODO: need to handle this better. Need to poke around at the possible exception types
-                    mo = self.handle.GetManagedObject(None, None, {"Dn":self.orgNameDN + "lan-conn-templ-" + vnicprefix + "-" + fabricID}) #We need to do this because the creation of the vNIC, and it's VLANs, are separate actions
+                    mo = self.handle.GetManagedObject(None, None, 
+                        {
+                            "Dn":self.orgNameDN + "lan-conn-templ-" + \
+                            vnicprefix + "-" + fabricID
+                        }) #We need to do this because the creation of the vNIC, and it's VLANs, are separate actions
 
                 #Add VLANs to vNIC
                 vlans = self.ucsconfig['vlans']
@@ -627,7 +871,7 @@ class UcsFunctions:
         #    dnSet.AddChild(dn)
 
         self.handle.LsInstantiateNTemplate(self.orgNameDN + "ls-" + sptname, numberToSpawn, spPrefix, self.orgNameDN[:-1], YesOrNo.FALSE)
-        
+
         #self.handle.LsInstantiateNTemplate(dn, inNumberOf, inServerNamePrefixOrEmpty, inTargetOrg, inHierarchical=YesOrNo.FALSE, dumpXml=None)
         #self.handle.LsInstantiateNNamedTemplate("org-root/org-ORG_TEST/ls-SPT-TEST", dnSet, "org-root/org-ORG_TEST", YesOrNo.FALSE)
 
