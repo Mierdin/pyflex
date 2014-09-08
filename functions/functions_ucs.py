@@ -75,8 +75,8 @@ class UcsFunctions:
                 {
                     IppoolBlock.FROM:"1.1.1.1", 
                     IppoolBlock.TO:"1.1.1.1", 
-                    IppoolBlock.DN:"org-root/ip-pool-iscsi-initiator-pool \
-                    /block-1.1.1.1-1.1.1.1"
+                    IppoolBlock.DN:"org-root/ip-pool-iscsi-initiator-pool" + \
+                    "/block-1.1.1.1-1.1.1.1"
                 })
         except UcsException:
             print "Already exists" #convert to logging and TODO: need to handle this better. Need to poke around at the possible exception types
