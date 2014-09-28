@@ -3,6 +3,13 @@
 
     functions_ucs contains all functions pertinent to building,
     configuring, or retrieving data from a Cisco UCS system
+
+    DISCLAIMER: I am aware of the utter shittiness that is this file.
+    Much of this was inherited from the auto-generated Python that is 
+    provided by the UCS Python SDK, which is often very non-compliant 
+    with proper code standards, etc. Consider this file an ongoing 
+    work-in-progress.
+
 """
 
 from UcsSdk import *
