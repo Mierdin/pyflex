@@ -24,9 +24,10 @@ sections:
 # Enter authentication information here
 auth:
     ucs:
-        host: 10.12.0.74
-        user: admin
-        pass: cisco
+        host: 192.168.14.6
+        #host: 192.168.111.137
+        user: "admin"
+        pass: "Changeme123!"
     netapp:
         host: 10.12.0.70
         user: admin
@@ -48,7 +49,7 @@ auth:
 #
 # Define general configuration options hee
 general:
-    org: ORG_TEST #Define org name here, or if no suborg, write "root"
+    org: IDC_1 #Define org name here, or if no suborg, write "root"
     mgmtgw: 10.1.1.1
     ntp: 
         - 192.168.11.10
@@ -64,26 +65,28 @@ ucs:
         mac:
             A:
                 blockbegin: 00:25:B5:00:A0:00
-                blockend: 00:25:B5:00:A0:FF
+                blockend: 00:25:B5:00:A1:FF
             B:
                 blockbegin: 00:25:B5:00:B0:00
-                blockend: 00:25:B5:00:B0:FF
+                blockend: 00:25:B5:00:B1:FF
         wwpn:
             A:
                 blockbegin: 20:00:00:25:B5:00:A0:00
-                blockend: 20:00:00:25:B5:00:A0:FF
+                blockend: 20:00:00:25:B5:00:A1:FF
             B:
                 blockbegin: 20:00:00:25:B5:00:B0:00
-                blockend: 20:00:00:25:B5:00:B0:FF
+                blockend: 20:00:00:25:B5:00:B1:FF
         wwnn:
                 blockbegin: 20:00:00:25:B5:00:F0:00
-                blockend: 20:00:00:25:B5:00:F0:FF
+                blockend: 20:00:00:25:B5:00:F1:FF
         uuid:
                 blockbegin: 0000-000000000001
                 blockend: 0000-000000000100
     links: 4-link #How many connections will be used on a chassis IOM? This will be strictly enforced via the global chassis discovery policy
                 # options are 1-link, 2-link, 4-link, 8-link, or platform-max
-    sptname: SPT-TEST
+    sptname: ESXi_SPT
+    spprefix: ESXi-
+    numbertospawn: 4
 
 # VLANS
 #
@@ -98,15 +101,13 @@ ucs:
 # Also it is very important to provide a Unique name/description for each VLAN ID provided. UCS currently uses this value to determine VLAN membership. It's also just good sense.
 vlans:
     mgmt:
-        240: ESX_MGMT_10.1.40.0
+        10: ESX_MGMT_172.16.10.0
     nfs:
-        260: NFS_10.1.160.0
+        99: NFS_172.16.99.0
     prod:
-        109: Core_Services_10.1.9.0
-        232: 1000v-Control_10.1.32.0
-        234: CIFS_10.1.34.0
-        241: vMotion_10.1.41.0
-        249: Corporate-VMs_10.1.49.0
+        50: Existing_172.25.20.0
+        60: Server1_172.16.60.0
+        70: Server2_172.16.70.0
 
 # VSANS
 #
@@ -117,9 +118,9 @@ vlans:
 # the corresponding value.
 vsans:
     a:
-        235: FCoE_Fabric_A
+        110: FCoE_Fabric_A
     b:
-        236: FCoE_Fabric_B
+        120: FCoE_Fabric_B
 
 # QOS
 #

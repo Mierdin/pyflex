@@ -18,7 +18,7 @@ class PyFlex:
         """ Creates an object from configuration service """
 
         cfg_obj = FlexConfig("config.yml")
-        self.config = cfg_obj.parse_config("config.yml")
+        self.config = cfg_obj.parse_config()
 
     def start(self):
         """ Creates new workers and starts them """

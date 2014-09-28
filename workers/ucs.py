@@ -17,11 +17,14 @@ class UcsWorker(FlexWorker):
 
         ucsauth = self.config['auth']['ucs']
 
+        print ucsauth
+
         handle.Login(
             ucsauth['host'], 
             ucsauth['user'], 
             ucsauth['pass']
         )
+
 
         fxns = UcsFunctions(handle, self.config)
         fxns.ucsHousekeeping()
