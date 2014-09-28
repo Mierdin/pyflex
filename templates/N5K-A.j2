@@ -1,0 +1,243 @@
+feature fcoe
+switchname n5k-a
+feature npiv
+no feature telnet
+cfs eth distribute
+feature lacp
+feature vpc
+feature lldp
+username admin password 5 $1$lzfHOAz0$BcGw.32hK58ul4Ceu/yuG. role network-admin
+ip domain-lookup
+policy-map type network-qos jumbo
+ class type network-qos class-fcoe
+ pause no-drop
+ mtu 2158
+ class type network-qos class-default
+ mtu 9216
+ multicast-optimize
+system qos
+ service-policy type queuing input fcoe-default-in-policy
+ service-policy type queuing output fcoe-default-out-policy
+ service-policy type qos input fcoe-default-in-policy
+ service-policy type network-qos jumbo
+snmp-server user admin network-admin auth md5 0x2290deb706f2110502889404dde3a133 priv 
+0x2290deb706f2110502889404dde3a133 localizedkey
+rmon event 1 log trap public description FATAL(1) owner PMON@FATAL
+rmon event 2 log trap public description CRITICAL(2) owner PMON@CRITICAL
+rmon event 3 log trap public description ERROR(3) owner PMON@ERROR
+rmon event 4 log trap public description WARNING(4) owner PMON@WARNING
+rmon event 5 log trap public description INFORMATION(5) owner PMON@INFO
+vlan 1 
+vlan 2
+ name Native-VLAN
+vlan 101
+ fcoe vsan 101
+ name FCoE_Fabric_A
+vlan 3170
+ name NFS-VLAN
+vlan 3173
+ name vMotion-VLAN
+vlan 3174
+ name VM-Traffic-VLAN
+vlan 3175
+ name IB-MGMT-VLAN
+vlan 3176
+ name Packet-Control-VLAN
+spanning-tree port type edge bpduguard default
+spanning-tree port type network default
+vrf context management
+ ip route 0.0.0.0/0 192.168.172.1
+port-channel load-balance ethernet source-dest-port
+vpc domain 49
+ role priority 10
+ peer-keepalive destination 192.168.172.195 source 192.168.172.194
+ auto-recovery
+vsan database
+ vsan 101 name "Fabric_A" 
+device-alias database
+ device-alias name VM-Host-Infra-02_A pwwn 20:00:00:25:b5:00:0a:1f
+device-alias commit
+fcdomain fcid database
+ vsan 1 wwn 50:0a:09:83:8d:31:2f:be fcid 0x0e0000 dynamic
+ vsan 1 wwn 50:0a:09:83:9d:31:2f:be fcid 0x0e0001 dynamic
+ vsan 101 wwn 50:0a:09:84:80:20:0b:29 fcid 0x910000 dynamic
+ vsan 101 wwn 20:01:00:a0:98:54:ca:a5 fcid 0x910001 dynamic
+! [fcp_lif01a]
+ vsan 101 wwn 50:0a:09:84:80:f0:0b:8d fcid 0x910020 dynamic
+ vsan 101 wwn 20:04:00:a0:98:54:ca:a5 fcid 0x910021 dynamic
+! [fcp_lif02a]
+ vsan 101 wwn 22:d8:54:7f:ee:a3:c4:7f fcid 0x910040 dynamic
+ vsan 101 wwn 20:00:00:25:b5:00:0a:0f fcid 0x910041 dynamic
+! [VM-Host-Infra-01_A]
+ vsan 101 wwn 20:00:00:25:b5:00:0a:1f fcid 0x910042 dynamic
+! [VM-Host-Infra-02_A]
+interface port-channel10
+ inherit port-profile vPC-Peer-Link
+ description vPC peer-link
+ vpc peer-link
+interface port-channel11
+ inherit port-profile FAS-data-uplink
+ description clus-01
+ switchport trunk allowed vlan 101, 3170
+ vpc 11
+interface port-channel12
+ inherit port-profile FAS-data-uplink
+ description clus-02
+ switchport trunk allowed vlan 101, 3170
+ vpc 12
+interface port-channel13
+ inherit port-profile UCS-Ethernet
+ description ucs-A
+ vpc 13
+interface port-channel14
+ inherit port-profile UCS-Ethernet
+ description ucs-B
+ vpc 14 
+interface port-channel15
+ inherit port-profile UCS-FCOE-FABRIC-A
+ description ucs-A:FCoE
+interface port-channel16
+ inherit port-profile 1110x
+ description NX1110X-1
+ speed 1000
+ vpc 16
+interface port-channel17
+ inherit port-profile 1110x
+ description NX1110X-2
+ speed 1000
+ vpc 17
+interface vfc11
+ bind interface Ethernet1/1
+ switchport trunk allowed vsan 101
+ switchport description clus-01:0e
+ no shutdown
+interface vfc12
+ bind interface Ethernet1/2
+ switchport trunk allowed vsan 101
+ switchport description clus-02:0e
+ no shutdown
+interface vfc15
+ bind interface port-channel15
+ switchport trunk allowed vsan 101
+ switchport description ucs-A:FCoE
+ no shutdown
+vsan database
+ vsan 101 interface vfc11
+ vsan 101 interface vfc12
+ vsan 101 interface vfc15
+interface Ethernet1/1
+ description clus-01:e0e
+ switchport mode trunk
+ switchport trunk native vlan 2
+ switchport trunk allowed vlan 101,3170
+ load-interval counter 3 60
+ channel-group 11 mode active
+interface Ethernet1/2
+ description clus-02:e0e
+ switchport mode trunk
+ switchport trunk native vlan 2
+ switchport trunk allowed vlan 101,3170
+ load-interval counter 3 60
+ channel-group 12 mode active
+interface Ethernet1/3
+interface Ethernet1/4
+interface Ethernet1/5
+interface Ethernet1/6
+interface Ethernet1/7
+interface Ethernet1/8
+interface Ethernet1/9
+interface Ethernet1/10 
+interface Ethernet1/11
+ description ucs-A:1/19
+ switchport mode trunk
+ switchport trunk native vlan 2
+ switchport trunk allowed vlan 3170,3173-3176
+ channel-group 13 mode active
+interface Ethernet1/12
+ description ucs-B:1/19
+ switchport mode trunk
+ switchport trunk native vlan 2
+ switchport trunk allowed vlan 3170,3173-3176
+ channel-group 14 mode active
+interface Ethernet1/13
+ description n5k-B:1/13
+ switchport mode trunk
+ switchport trunk native vlan 2
+ switchport trunk allowed vlan 3170,3173-3176
+ channel-group 10 mode active
+interface Ethernet1/14
+ description n5k-B:1/14
+ switchport mode trunk
+ switchport trunk native vlan 2
+ switchport trunk allowed vlan 3170,3173-3176
+ channel-group 10 mode active
+interface Ethernet1/15
+ description NX1110X-1:1
+ switchport mode trunk
+ switchport trunk native vlan 2
+ switchport trunk allowed vlan 3175-3176
+ speed 1000
+ channel-group 16 mode active
+interface Ethernet1/16
+ description NX1110X-2:1
+ switchport mode trunk
+ switchport trunk native vlan 2
+ switchport trunk allowed vlan 3175-3176
+ speed 1000
+ channel-group 17 mode active
+interface Ethernet1/17
+interface Ethernet1/18
+ inherit port-profile uplink
+ switchport mode trunk
+ switchport trunk allowed vlan 3174-3175
+interface Ethernet1/19
+interface Ethernet1/20
+interface Ethernet1/21
+interface Ethernet1/22
+interface Ethernet1/23
+interface Ethernet1/24
+interface Ethernet1/25
+interface Ethernet1/26
+interface Ethernet1/27
+interface Ethernet1/28 
+interface Ethernet1/29
+interface Ethernet1/30
+interface Ethernet1/31
+ description ucs-A:1/31
+ switchport mode trunk
+ switchport trunk native vlan 2
+ switchport trunk allowed vlan 101
+ channel-group 15 mode active
+interface Ethernet1/32
+ description ucs-A:1/32
+ switchport mode trunk
+ switchport trunk native vlan 2
+ switchport trunk allowed vlan 101
+ channel-group 15 mode active
+interface mgmt0
+ vrf member management
+ ip address 192.168.172.194/24
+line console
+line vty
+boot kickstart bootflash:/n5000-uk9-kickstart.7.0.2.N1.1.bin
+boot system bootflash:/n5000-uk9.7.0.2.N1.1.bin 
+poap transit
+!Full Zone Database Section for vsan 101
+zone name VM-Host-Infra-01_A vsan 101
+ member pwwn 20:00:00:25:b5:00:0a:0f
+! [VM-Host-Infra-01_A]
+ member pwwn 20:01:00:a0:98:54:ca:a5
+! [fcp_lif01a]
+ member pwwn 20:04:00:a0:98:54:ca:a5
+! [fcp_lif02a]
+zone name VM-Host-Infra-02_A vsan 101
+ member pwwn 20:01:00:a0:98:54:ca:a5
+! [fcp_lif01a]
+ member pwwn 20:04:00:a0:98:54:ca:a5
+! [fcp_lif02a]
+ member pwwn 20:00:00:25:b5:00:0a:1f
+! [VM-Host-Infra-02_A]
+zoneset name FlexPod vsan 101
+ member VM-Host-Infra-01_A
+ member VM-Host-Infra-02_A
+zoneset activate name FlexPod vsan 101
