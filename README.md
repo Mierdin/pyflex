@@ -34,3 +34,12 @@ to build the library and automatically install dependencies.
 
 If you have issues with pycrypto on Windows while building this library, just download the pre-built binaries here:
 http://www.voidspace.org.uk/python/modules.shtml#pycrypto
+
+# REFERENCES
+
+This is a list of vendor-supplied documentation used as references in building PyFlex.
+
+- [Flexpod Design Guide - ESXi 5.5](http://www.cisco.com/c/dam/en/us/td/docs/unified_computing/ucs/UCS_CVDs/flexpod_esxi55u1_design.pdf)
+- [Flexpod Deployment Guide - ESXi 5.5](http://www.cisco.com/c/dam/en/us/td/docs/unified_computing/ucs/UCS_CVDs/flexpod_esxi55u1.pdf)
+
+<!-- NOT USED YET - here for future reference - http://www.cisco.com/c/dam/en/us/td/docs/unified_computing/ucs/UCS_CVDs/flexpod_esxi55u1_n9k.pdf -->
