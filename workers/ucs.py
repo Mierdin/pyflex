@@ -4,6 +4,7 @@
 """
 from worker import FlexWorker
 from functions.functions_ucs import UcsFunctions
+from functions.newfunctions_ucs import NewUcsFunctions
 from UcsSdk import *
 
 class UcsWorker(FlexWorker):
@@ -25,15 +26,60 @@ class UcsWorker(FlexWorker):
             ucsauth['pass']
         )
 
+        newfxns = NewUcsFunctions(handle)
 
-        fxns = UcsFunctions(handle, self.config)
-        fxns.ucsHousekeeping()
-        fxns.createVLANSandVSANS()
-        fxns.createUCSPools()
-        fxns.ucsCreatePolicies()
-        fxns.createBootPolicy()
-        fxns.createVNICTemplates()
-        fxns.createVHBATemplates()
-        fxns.createSpTemplate()
-        fxns.spawnZerglings()
+        """ VLANS """
+
+        vlans = {}
+
+        #Get a list of all VLANs, regardless of group
+        for group in self.config['vlans']:
+            if group != 'storage': #Don't want to explicitly add FCoE VLANs here, that's done in the VSAN creation
+                for vlanid, vlanname in self.config['vlans'][group].iteritems():  #TODO: This is really ugly because of the VLAN layout in the config file. Maybe need to figure out a way to restructure it.
+                    vlans[vlanid] = vlanname
+
+        #Add all VLANs in the list
+        for vlanid, vlanname in vlans.iteritems():
+            newfxns.createVLAN(vlanid, vlanname)
+
+        #Remove any VLANs within UCS that are not in the config
+        for mo in newfxns.getVLANs().OutConfigs.GetChild():
+            if mo.Dn[:10] == "fabric/lan" and mo.Dn[:22] != "fabric/lan/net-default":
+                if int(mo.Id) in vlans:
+                    pass
+                else:
+                    newfxns.removeVLAN(mo)
+
+        """ VSANS """
+
+        vsans = {}
+
+        #Create VSANs from the list
+        for vsanid, vsanname in self.config['vsans']['a'].iteritems():
+            newfxns.createVSAN("A", vsanid, vsanname)
+        for vsanid, vsanname in self.config['vsans']['b'].iteritems():
+            newfxns.createVSAN("B", vsanid, vsanname)
+
+        #Remove any VSANs within UCS that are not in the config
+        for mo in newfxns.getVSANs().OutConfigs.GetChild():
+            if int(mo.Id) in self.config['vsans']['a'] or int(mo.Id) in self.config['vsans']['b']:
+                pass
+            else:
+                if int(mo.Id) != 1:
+                    newfxns.removeVSAN(mo)
+
+
+        #I am commenting this out while I am re-developing the workflow. The functions
+        #referred to below are untouched - feel free to uncomment and use them
+        
+        #fxns = UcsFunctions(handle, self.config)
+        #fxns.ucsHousekeeping()
+        #fxns.createVLANSandVSANS()
+        #fxns.createUCSPools()
+        #fxns.ucsCreatePolicies()
+        #fxns.createBootPolicy()
+        #xns.createVNICTemplates()
+        #fxns.createVHBATemplates()
+        #fxns.createSpTemplate()
+        #fxns.spawnZerglings()
         #DEFINE REST OF UCS WORKFLOW HERE
