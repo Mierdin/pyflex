@@ -16,14 +16,58 @@ class NewUcsFunctions:
 
     FABRICS = ['A', 'B']
 
-    def __init__(self, handle):
+    def __init__(self, handle, orgName): #TODO: Currently requiring org info at start of 
 
         #TODO: is there a way to check to make sure this is a valid handle? I.e. logged in?
         self.handle = handle
 
-        self.orgroot = self.handle.GetManagedObject(None, None, {"Dn":"fabric/lan"})
+        self.orgroot = self.handle.GetManagedObject(None, None, {"Dn":"org-root/"})
+
+        #TODO: Need to re-implement this so you can use root orgs. Currently only suborgs supported
+        #Set DN string for org
+        #if newfxns.orgName == "root":
+        #    newfxns.orgNameDN = "org-root/"
+        #else:
+        #    newfxns.orgNameDN = "org-root/org-" + newfxns.orgName + "/"
+
+        self.orgName = orgName
+        self.orgNameDN = "org-root/org-" + orgName #TODO: Would prefer to get this more dynamically (i.e. self.org.Dn)
+
+        #TODO: Would prefer to reference the getSubOrg method, but is this possible in __init__? Getting a "getSubOrg is not defined" error
+        self.org = self.handle.GetManagedObject(None, OrgOrg.ClassId(), 
+            {
+                OrgOrg.DN : self.orgNameDN
+            })
 
         print "Instantiated New Functions"
+
+    def getSubOrg(self, orgName):
+        self.org = self.handle.GetManagedObject(None, OrgOrg.ClassId(), 
+            {
+                OrgOrg.DN : "org-root/org-" + orgName
+            })
+
+    def createSubOrg(self, orgName):
+        if self.orgName != "root" :
+            try:
+                self.handle.AddManagedObject(self.rootorg, OrgOrg.ClassId(), 
+                    {
+                        OrgOrg.DESCR:self.orgName,
+                        OrgOrg.NAME:self.orgName,
+                        OrgOrg.DN:"org-root/org-" + self.orgName
+                    })
+            except UcsException:
+                print "Sub-organization already exists" #convert to logging and TODO: need to handle this better. Need to poke around at the possible exception types
+
+            self.org = self.handle.GetManagedObject(None, OrgOrg.ClassId(), 
+                {
+                    OrgOrg.DN : self.orgNameDN
+                })
+        else:
+            self.org = self.handle.GetManagedObject(None, OrgOrg.ClassId(), 
+                {
+                    OrgOrg.DN : "org-root/"
+                })
 
 
     ###########
@@ -99,3 +143,49 @@ class NewUcsFunctions:
             print "Deleted VSAN " + str(mo.Id) + ": " + mo.Name
         except UcsValidationException as e:  #TODO: This seems to have a different exxception type for missing objects
             print "VSAN " + str(mo.Id) + ": " + mo.Name + " already deleted -- " + e.errorDescr
+
+
+    ###############
+    #  MAC POOLS  #
+    ###############
+
+    def getMacPool(self, poolname):
+        pass
+
+    def createMacPool(self, fabric, blockstart, blockend):
+        try:
+            mo = self.handle.AddManagedObject(self.org, "macpoolPool", 
+                {
+                    "Descr":"ESXi Servers Fabric " + fabric, 
+                    "Name":"ESXi-MAC-" + fabric, 
+                    "AssignmentOrder":"sequential", 
+                    "PolicyOwner":"local", 
+                    "Dn":self.orgNameDN + "mac-pool-" + \
+                        "ESXi-MAC-" + fabric
+                })
+        except UcsException:
+            print "MAC Pool already exists" #convert to logging and TODO: need to handle this better. Need to poke around at the possible exception types
+            mo = self.handle.GetManagedObject(None, None, 
+            {
+                "Dn":self.orgNameDN + "mac-pool-ESXi-MAC-" + fabric
+            }) #We need to do this because the creation of the pool, and it's blocks, are separate actions
+        
+        try:
+            mo_1 = self.handle.AddManagedObject(mo, "macpoolBlock", 
+                {
+                    "From":blockstart, 
+                    "To":blockend, 
+                    "Dn":self.orgNameDN + "mac-pool-ESXi-MAC-" + \
+                        fabric + "/block-" + blockstart + "-"  + blockend
+                })
+        except UcsException:
+            print "MAC Pool block already exists" #convert to logging and TODO: need to handle this better. Need to poke around at the possible exception types
+
+    def removeMacPool(self, mo):
+        pass
+
+
+
+
+
+

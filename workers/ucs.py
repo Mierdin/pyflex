@@ -26,7 +26,8 @@ class UcsWorker(FlexWorker):
             ucsauth['pass']
         )
 
-        newfxns = NewUcsFunctions(handle)
+        newfxns = NewUcsFunctions(handle, self.config['general']['org'])
+
 
         """ VLANS """
 
@@ -50,6 +51,7 @@ class UcsWorker(FlexWorker):
                 else:
                     newfxns.removeVLAN(mo)
 
+
         """ VSANS """
 
         vsans = {}
@@ -67,6 +69,25 @@ class UcsWorker(FlexWorker):
             else:
                 if int(mo.Id) != 1:
                     newfxns.removeVSAN(mo)
+
+        """ MAC POOLS """
+
+        #TODO: Lots of shortcuts taken here. Need to come back and clean up this atrocious mess.
+        pools = self.config['ucs']['pools']
+
+        #TODO: Implement IP pool. Preferably in suborg, as housekeeping is populating ext-mgmt with dummy block
+
+        #MAC Pools
+        for fabric in pools['mac']: #TODO: This loop is here for the future, but obviously since the name is statically set, this only works with a single pool per fabric, currently.
+            newfxns.createMacPool(fabric, pools['mac'][fabric]['blockbegin'], pools['mac'][fabric]['blockend'])
+
+
+
+
+
+
+
+
 
 
         #I am commenting this out while I am re-developing the workflow. The functions
