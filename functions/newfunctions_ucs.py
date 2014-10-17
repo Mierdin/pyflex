@@ -21,53 +21,51 @@ class NewUcsFunctions:
         #TODO: is there a way to check to make sure this is a valid handle? I.e. logged in?
         self.handle = handle
 
+        #Some functions refer directly to root (i.e. VLANs) self.orgroot represents this
         self.orgroot = self.handle.GetManagedObject(None, None, {"Dn":"org-root/"})
 
-        #TODO: Need to re-implement this so you can use root orgs. Currently only suborgs supported
-        #Set DN string for org
-        #if newfxns.orgName == "root":
-        #    newfxns.orgNameDN = "org-root/"
-        #else:
-        #    newfxns.orgNameDN = "org-root/org-" + newfxns.orgName + "/"
+        #Set self.org object. This is referred to throughout the various functions.
+        if orgName != "root":
+            self.org = self.getSubOrg(orgName)
+        else: 
+            self.org = self.orgroot
 
-        self.orgName = orgName
-        self.orgNameDN = "org-root/org-" + orgName #TODO: Would prefer to get this more dynamically (i.e. self.org.Dn)
+        #For some reason, org objects are stored as lists
+        for item in self.org:
+            
+            #Sets other org-related properties. Functions should refer directly
+            #to self.orgNameDN - self.orgName is used only by suborg functions
+            self.orgName = item.Name
+            self.orgNameDN = item.Dn
+            
+        #Create requested suborg
+        self.createSubOrg(self.orgName)
 
-        #TODO: Would prefer to reference the getSubOrg method, but is this possible in __init__? Getting a "getSubOrg is not defined" error
+        print "Instantiated New Functions"
+
+    def getSubOrg(self, orgName):
+        suborg = self.handle.GetManagedObject(None, OrgOrg.ClassId(), 
+            {
+                OrgOrg.DN : "org-root/org-" + orgName
+            })
+        return suborg
+
+    def createSubOrg(self, orgName):
+        try:
+            self.handle.AddManagedObject(self.orgroot, OrgOrg.ClassId(),
+                {
+                    "Dn":"org-root/org-" + self.orgName,
+                    "Desc":self.orgName,
+                    "Name":self.orgName
+                })
+        except UcsException:
+            print "Sub-organization already exists" #convert to logging and TODO: need to handle this better. Need to poke around at the possible exception types
+
         self.org = self.handle.GetManagedObject(None, OrgOrg.ClassId(), 
             {
                 OrgOrg.DN : self.orgNameDN
             })
 
-        print "Instantiated New Functions"
-
-    def getSubOrg(self, orgName):
-        self.org = self.handle.GetManagedObject(None, OrgOrg.ClassId(), 
-            {
-                OrgOrg.DN : "org-root/org-" + orgName
-            })
-
-    def createSubOrg(self, orgName):
-        if self.orgName != "root" :
-            try:
-                self.handle.AddManagedObject(self.rootorg, OrgOrg.ClassId(), 
-                    {
-                        OrgOrg.DESCR:self.orgName,
-                        OrgOrg.NAME:self.orgName,
-                        OrgOrg.DN:"org-root/org-" + self.orgName
-                    })
-            except UcsException:
-                print "Sub-organization already exists" #convert to logging and TODO: need to handle this better. Need to poke around at the possible exception types
-
-            self.org = self.handle.GetManagedObject(None, OrgOrg.ClassId(), 
-                {
-                    OrgOrg.DN : self.orgNameDN
-                })
-        else:
-            self.org = self.handle.GetManagedObject(None, OrgOrg.ClassId(), 
-                {
-                    OrgOrg.DN : "org-root/"
-                })
 
 
     ###########
@@ -183,6 +181,9 @@ class NewUcsFunctions:
 
     def removeMacPool(self, mo):
         pass
+
+
+
 
 
 
