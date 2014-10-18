@@ -5,14 +5,15 @@
     configuring, or retrieving data from a Cisco UCS system
 
     DISCLAIMER: I am aware of the utter shittiness that is this file.
-    Much of this was inherited from the auto-generated Python that is 
-    provided by the UCS Python SDK, which is often very non-compliant 
-    with proper code standards, etc. Consider this file an ongoing 
+    Much of this was inherited from the auto-generated Python that is
+    provided by the UCS Python SDK, which is often very non-compliant
+    with proper code standards, etc. Consider this file an ongoing
     work-in-progress.
 
 """
 
 from UcsSdk import *
+
 
 class UcsFunctions:
     """ Class that contains all functions for Cisco UCS """
@@ -20,7 +21,7 @@ class UcsFunctions:
     FABRICS = ['A', 'B']
 
     def __init__(self, handle, ucsconfig):
-        
+
         self.handle = handle
 
         #TODO: ucsconfig is currently just the entire config. Prune this
@@ -37,66 +38,64 @@ class UcsFunctions:
             self.orgNameDN = "org-root/org-" + self.orgName + "/"
 
         # When we need to refer to root regardless
-        self.rootorg = handle.GetManagedObject(None, OrgOrg.ClassId(), 
+        self.rootorg = handle.GetManagedObject(None, OrgOrg.ClassId(),
             {
-                OrgOrg.DN : "org-root/"
+                OrgOrg.DN: "org-root/"
             })
 
         self.org = None
 
         #Add suborg if needed
-        if self.orgName != "root" :
+        if self.orgName != "root":
             try:
-                self.handle.AddManagedObject(self.rootorg, OrgOrg.ClassId(), 
+                self.handle.AddManagedObject(self.rootorg, OrgOrg.ClassId(),
                     {
-                        OrgOrg.DESCR:self.orgName,
-                        OrgOrg.NAME:self.orgName,
-                        OrgOrg.DN:"org-root/org-" + self.orgName
+                        OrgOrg.DESCR: self.orgName,
+                        OrgOrg.NAME: self.orgName,
+                        OrgOrg.DN: "org-root/org-" + self.orgName
                     })
             except UcsException:
                 print "Sub-organization already exists" #convert to logging and TODO: need to handle this better. Need to poke around at the possible exception types
 
-            self.org = self.handle.GetManagedObject(None, OrgOrg.ClassId(), 
+            self.org = self.handle.GetManagedObject(None, OrgOrg.ClassId(),
                 {
                     OrgOrg.DN : self.orgNameDN
                 })
         else:
-            self.org = self.handle.GetManagedObject(None, OrgOrg.ClassId(), 
+            self.org = self.handle.GetManagedObject(None, OrgOrg.ClassId(),
                 {
                     OrgOrg.DN : "org-root/"
                 })
 
         print "Instantiated UcsFunctions"
 
-
     def ucsHousekeeping(self):
 
         try:
             #Add block to iscsi initiator pool
             obj = self.handle.GetManagedObject(None, 
-                IppoolPool.ClassId(), 
+                IppoolPool.ClassId(),
                 {
-                    IppoolPool.DN:"org-root/ip-pool-iscsi-initiator-pool"
+                    IppoolPool.DN: "org-root/ip-pool-iscsi-initiator-pool"
                 })
-            self.handle.AddManagedObject(obj, IppoolBlock.ClassId(), 
+            self.handle.AddManagedObject(obj, IppoolBlock.ClassId(),
                 {
-                    IppoolBlock.FROM:"1.1.1.1", 
-                    IppoolBlock.TO:"1.1.1.1", 
-                    IppoolBlock.DN:"org-root/ip-pool-iscsi-initiator-pool" + \
+                    IppoolBlock.FROM: "1.1.1.1",
+                    IppoolBlock.TO: "1.1.1.1",
+                    IppoolBlock.DN: "org-root/ip-pool-iscsi-initiator-pool" +
                     "/block-1.1.1.1-1.1.1.1"
                 })
         except UcsException:
             print "Already exists" #convert to logging and TODO: need to handle this better. Need to poke around at the possible exception types
-        
+
         #Set default maintenance policy to user-ack
         self.handle.AddManagedObject(self.rootorg, 
             LsmaintMaintPolicy.ClassId(),
-            {
-                LsmaintMaintPolicy.DN:"org-root/maint-default", 
-                LsmaintMaintPolicy.POLICY_OWNER:"local", 
-                LsmaintMaintPolicy.UPTIME_DISR:"user-ack", 
-                LsmaintMaintPolicy.DESCR:"", 
-                LsmaintMaintPolicy.SCHED_NAME:"default"
+                LsmaintMaintPolicy.DN: "org-root/maint-default", 
+                LsmaintMaintPolicy.POLICY_OWNER: "local", 
+                LsmaintMaintPolicy.UPTIME_DISR: "user-ack", 
+                LsmaintMaintPolicy.DESCR: "", 
+                LsmaintMaintPolicy.SCHED_NAME: "default"
             }, True)
 
         #List default pools, and remove them
