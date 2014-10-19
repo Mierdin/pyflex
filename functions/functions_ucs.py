@@ -14,7 +14,6 @@
 
 from UcsSdk import *
 
-
 class UcsFunctions:
     """ Class that contains all functions for Cisco UCS """
 
@@ -89,8 +88,8 @@ class UcsFunctions:
             print "Already exists" #convert to logging and TODO: need to handle this better. Need to poke around at the possible exception types
 
         #Set default maintenance policy to user-ack
-        self.handle.AddManagedObject(self.rootorg, 
-            LsmaintMaintPolicy.ClassId(),
+        self.handle.AddManagedObject(self.rootorg,
+                LsmaintMaintPolicy.ClassId(), {
                 LsmaintMaintPolicy.DN: "org-root/maint-default", 
                 LsmaintMaintPolicy.POLICY_OWNER: "local", 
                 LsmaintMaintPolicy.UPTIME_DISR: "user-ack", 
