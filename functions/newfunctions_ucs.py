@@ -188,7 +188,7 @@ class NewUcsFunctions(object):
                     "ESXi-MAC-" + fabric
                 })
         except UcsException:
-            print "MAC Pool already exists"
+            print "MAC Pool " + "ESXi-MAC-" + fabric + " already exists"
             mo = self.handle.GetManagedObject(None, None,
             {
                 "Dn": self.orgNameDN + "mac-pool-ESXi-MAC-" + fabric
@@ -204,7 +204,7 @@ class NewUcsFunctions(object):
                     fabric + "/block-" + blockstart + "-" + blockend
                 })
         except UcsException:
-            print "MAC Pool block already exists"
+            print "MAC Pool block " + blockstart + "-" + blockend + " already exists"
 
     def removeMacPool(self, mo):
         pass
@@ -229,23 +229,23 @@ class NewUcsFunctions(object):
                     "ESXi-WWPN-" + fabric
                 })
         except UcsException:
-            print "WWPN Pool already exists"
+            print "WWPN Pool " + "ESXi-WWPN-" + fabric + " already exists"
             mo = self.handle.GetManagedObject(None, None,
             {
                 "Dn": self.orgNameDN + "wwpn-pool-ESXi-WWPN-" + fabric
             })
 
         #Create WWPN Pool Block
-#        try:
-        self.handle.AddManagedObject(mo, "fcpoolBlock",
-            {
-                "From": blockstart,
-                "To": blockend,
-                "Dn": self.orgNameDN + "wwn-pool-ESXi-WWPN-" +
-                fabric + "/block-" + blockstart + "-" + blockend
-            })
- #       except UcsException:
-  #          print "WWPN Pool block already exists"
+        try:
+            self.handle.AddManagedObject(mo, "fcpoolBlock",
+                {
+                    "From": blockstart,
+                    "To": blockend,
+                    "Dn": self.orgNameDN + "wwn-pool-ESXi-WWPN-" +
+                    fabric + "/block-" + blockstart + "-" + blockend
+                })
+        except UcsException:
+            print "WWPN Pool block " + blockstart + "-" + blockend + " already exists"
 
     def removeWwpnPool(self, mo):
         pass
