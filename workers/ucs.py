@@ -97,3 +97,6 @@ class UcsWorker(FlexWorker):
         newfxns.setPowerPolicy("grid")
         newfxns.setChassisDiscoveryPolicy(str(self.config['ucs']['links']))
         newfxns.setGlobalQosPolicy(self.config['qos'])
+
+        for classname, hostcontrol in self.config['qos']['classes'].iteritems():
+            newfxns.createQosPolicy(classname, hostcontrol)

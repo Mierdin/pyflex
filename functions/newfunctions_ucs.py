@@ -287,87 +287,111 @@ class NewUcsFunctions(object):
             print "Error setting Chassis Discovery policy"
 
     def setGlobalQosPolicy(self, qosconfig):
-        
-        #Pull MTU for default/best-effort class
-        defmtu = str(qosconfig['defaultmtu'])
+        try:
 
-        #We want to send "normal" to UCS, not "1500".
-        #Both will work, but "1500" will generate an annoying warning.
-        if defmtu == "1500":
-            defmtu = "normal"
+            #Pull MTU for default/best-effort class
+            defmtu = str(qosconfig['defaultmtu'])
 
-        #Position ourselves properly within the MO tree
-        obj = self.handle.GetManagedObject(None, None, {"Dn":"fabric/lan"})
-        mo = self.handle.AddManagedObject(obj, "qosclassDefinition", 
-            {
-                "PolicyOwner":"local", 
-                "Dn":"fabric/lan/classes", 
-                "Descr":""
-            }, True)
+            #We want to send "normal" to UCS, not "1500".
+            #Both will work, but "1500" will generate an annoying warning.
+            if defmtu == "1500":
+                defmtu = "normal"
 
-        #Set params for Platinum class
-        self.handle.AddManagedObject(mo, "qosclassEthClassified", 
-            {
-                "Priority":"platinum",
-                "Mtu":"9126", 
-                "Name":"", 
-                "Dn":"fabric/lan/classes/class-platinum", 
-                "Weight":"10", 
-                "AdminState":"disabled", 
-                "Cos":"5", 
-                "Drop":"drop", 
-                "MulticastOptimize":"no"
-            }, True)
+            #Position ourselves properly within the MO tree
+            obj = self.handle.GetManagedObject(None, None, {"Dn":"fabric/lan"})
+            mo = self.handle.AddManagedObject(obj, "qosclassDefinition", 
+                {
+                    "PolicyOwner":"local", 
+                    "Dn":"fabric/lan/classes", 
+                    "Descr":""
+                }, True)
 
-        #Set params for Gold class
-        self.handle.AddManagedObject(mo, "qosclassEthClassified", 
-            {
-                "Priority":"gold",
-                "Mtu":"9126", 
-                "Name":"", 
-                "Dn":"fabric/lan/classes/class-gold", 
-                "Weight":"9", 
-                "AdminState":"enabled", 
-                "Cos":"4", 
-                "Drop":"drop", 
-                "MulticastOptimize":"no"
-            }, True)
+            #Set params for Platinum class
+            self.handle.AddManagedObject(mo, "qosclassEthClassified", 
+                {
+                    "Priority":"platinum",
+                    "Mtu":"9126", 
+                    "Name":"", 
+                    "Dn":"fabric/lan/classes/class-platinum", 
+                    "Weight":"10", 
+                    "AdminState":"disabled", 
+                    "Cos":"5", 
+                    "Drop":"drop", 
+                    "MulticastOptimize":"no"
+                }, True)
 
-        #Set params for Silver class
-        self.handle.AddManagedObject(mo, "qosclassEthClassified", 
-            {
-                "Priority":"silver",
-                "Mtu":"9126", 
-                "Name":"", 
-                "Dn":"fabric/lan/classes/class-silver", 
-                "Weight":"8", 
-                "AdminState":"enabled", 
-                "Cos":"2", 
-                "Drop":"drop", 
-                "MulticastOptimize":"no"
-            }, True)
+            #Set params for Gold class
+            self.handle.AddManagedObject(mo, "qosclassEthClassified", 
+                {
+                    "Priority":"gold",
+                    "Mtu":"9126", 
+                    "Name":"", 
+                    "Dn":"fabric/lan/classes/class-gold", 
+                    "Weight":"9", 
+                    "AdminState":"enabled", 
+                    "Cos":"4", 
+                    "Drop":"drop", 
+                    "MulticastOptimize":"no"
+                }, True)
 
-        #Set params for Bronze class
-        self.handle.AddManagedObject(mo, "qosclassEthClassified", 
-            {
-                "Priority":"bronze",
-                "Mtu":"9126", 
-                "Name":"", 
-                "Dn":"fabric/lan/classes/class-bronze", 
-                "Weight":"7", 
-                "AdminState":"enabled", 
-                "Cos":"1", 
-                "Drop":"drop", 
-                "MulticastOptimize":"no"
-            }, True)
+            #Set params for Silver class
+            self.handle.AddManagedObject(mo, "qosclassEthClassified", 
+                {
+                    "Priority":"silver",
+                    "Mtu":"9126", 
+                    "Name":"", 
+                    "Dn":"fabric/lan/classes/class-silver", 
+                    "Weight":"8", 
+                    "AdminState":"enabled", 
+                    "Cos":"2", 
+                    "Drop":"drop", 
+                    "MulticastOptimize":"no"
+                }, True)
 
-        #Set params for Best-Effort class
-        self.handle.AddManagedObject(mo, "qosclassEthBE",
-            {
-                "Name":"",
-                "MulticastOptimize":"no",
-                "Mtu":defmtu,
-                "Dn":"fabric/lan/classes/class-best-effort",
-                "Weight":"5"
-            },
-            True)
+            #Set params for Bronze class
+            self.handle.AddManagedObject(mo, "qosclassEthClassified", 
+                {
+                    "Priority":"bronze",
+                    "Mtu":"9126", 
+                    "Name":"", 
+                    "Dn":"fabric/lan/classes/class-bronze", 
+                    "Weight":"7", 
+                    "AdminState":"enabled", 
+                    "Cos":"1", 
+                    "Drop":"drop", 
+                    "MulticastOptimize":"no"
+                }, True)
+
+            #Set params for Best-Effort class
+            self.handle.AddManagedObject(mo, "qosclassEthBE",
+                {
+                    "Name":"",
+                    "MulticastOptimize":"no",
+                    "Mtu":defmtu,
+                    "Dn":"fabric/lan/classes/class-best-effort",
+                    "Weight":"5"
+                },
+                True)
+        except UcsException:
+            print "Error setting Global QoS Policy"
+
+    def createQosPolicy(self, classname, hostcontrol):
+        try:
+            mo = self.handle.AddManagedObject(self.org, "epqosDefinition", 
+                {
+                    "Name":classname, 
+                    "Dn":self.orgNameDN + "ep-qos-" + classname, 
+                    "PolicyOwner":"local", 
+                    "Descr":classname + " QoS Policy"
+                })
+            self.handle.AddManagedObject(mo, "epqosEgress", 
+                {
+                    "Name":"", 
+                    "Burst":"10240", 
+                    "HostControl":hostcontrol, 
+                    "Prio":classname.lower(), 
+                    "Dn":self.orgNameDN + "ep-qos-" + classname + "/egress", 
+                    "Rate":"line-rate"
+                }, True)
+        except UcsException:
+            print "QoS Policy already exists"     
