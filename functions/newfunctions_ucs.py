@@ -7,6 +7,11 @@
     be done with the purpose of keeping the program going. (i.e. if an
     object being created already exists, etc. Not going to check to see
     if an object exists everytime before creating one)
+
+    This file may go away in the future - an ideal way of doing things is
+    to have this be it's own separate library, PyFlex being a consumer of 
+    said library. Just FYI 
+
 """
 
 from UcsSdk import OrgOrg, UcsException, FabricVlan, UcsValidationException
@@ -250,10 +255,119 @@ class NewUcsFunctions(object):
     def removeWwpnPool(self, mo):
         pass
 
+    ##############
+    #  POLICIES  #
+    ##############
 
+    def setPowerPolicy(self, redundancy):
+        try:
+            self.handle.AddManagedObject(self.orgroot, "computePsuPolicy", 
+                {
+                    "PolicyOwner": "local", 
+                    "Redundancy": redundancy, 
+                    "Dn": "org-root/psu-policy", 
+                    "Descr": ""
+                }, True)
+        except UcsException:
+            print "Error setting power policy"
 
+    def setChassisDiscoveryPolicy(self, links):
+        try:
+            self.handle.AddManagedObject(self.orgroot, "computeChassisDiscPolicy", 
+                {
+                    "Descr": "", 
+                    "PolicyOwner": "local", 
+                    "LinkAggregationPref": "port-channel", 
+                    "Action": links, 
+                    "Name": "", 
+                    "Rebalance": "user-acknowledged", 
+                    "Dn": "org-root/chassis-discovery"
+                }, True)
+        except UcsException:
+            print "Error setting Chassis Discovery policy"
 
+    def setGlobalQosPolicy(self, qosconfig):
+        
+        #Pull MTU for default/best-effort class
+        defmtu = str(qosconfig['defaultmtu'])
 
+        #We want to send "normal" to UCS, not "1500".
+        #Both will work, but "1500" will generate an annoying warning.
+        if defmtu == "1500":
+            defmtu = "normal"
 
+        #Position ourselves properly within the MO tree
+        obj = self.handle.GetManagedObject(None, None, {"Dn":"fabric/lan"})
+        mo = self.handle.AddManagedObject(obj, "qosclassDefinition", 
+            {
+                "PolicyOwner":"local", 
+                "Dn":"fabric/lan/classes", 
+                "Descr":""
+            }, True)
 
+        #Set params for Platinum class
+        self.handle.AddManagedObject(mo, "qosclassEthClassified", 
+            {
+                "Priority":"platinum",
+                "Mtu":"9126", 
+                "Name":"", 
+                "Dn":"fabric/lan/classes/class-platinum", 
+                "Weight":"10", 
+                "AdminState":"disabled", 
+                "Cos":"5", 
+                "Drop":"drop", 
+                "MulticastOptimize":"no"
+            }, True)
 
+        #Set params for Gold class
+        self.handle.AddManagedObject(mo, "qosclassEthClassified", 
+            {
+                "Priority":"gold",
+                "Mtu":"9126", 
+                "Name":"", 
+                "Dn":"fabric/lan/classes/class-gold", 
+                "Weight":"9", 
+                "AdminState":"enabled", 
+                "Cos":"4", 
+                "Drop":"drop", 
+                "MulticastOptimize":"no"
+            }, True)
+
+        #Set params for Silver class
+        self.handle.AddManagedObject(mo, "qosclassEthClassified", 
+            {
+                "Priority":"silver",
+                "Mtu":"9126", 
+                "Name":"", 
+                "Dn":"fabric/lan/classes/class-silver", 
+                "Weight":"8", 
+                "AdminState":"enabled", 
+                "Cos":"2", 
+                "Drop":"drop", 
+                "MulticastOptimize":"no"
+            }, True)
+
+        #Set params for Bronze class
+        self.handle.AddManagedObject(mo, "qosclassEthClassified", 
+            {
+                "Priority":"bronze",
+                "Mtu":"9126", 
+                "Name":"", 
+                "Dn":"fabric/lan/classes/class-bronze", 
+                "Weight":"7", 
+                "AdminState":"enabled", 
+                "Cos":"1", 
+                "Drop":"drop", 
+                "MulticastOptimize":"no"
+            }, True)
+
+        #Set params for Best-Effort class
+        self.handle.AddManagedObject(mo, "qosclassEthBE",
+            {
+                "Name":"",
+                "MulticastOptimize":"no",
+                "Mtu":defmtu,
+                "Dn":"fabric/lan/classes/class-best-effort",
+                "Weight":"5"
+            },
+            True)

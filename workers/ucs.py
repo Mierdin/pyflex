@@ -91,3 +91,9 @@ class UcsWorker(FlexWorker):
         #WWPN Pools
         for fabric in wwpnpools: #TODO: This loop is here for the future, but obviously since the name is statically set, this only works with a single pool per fabric, currently.
             newfxns.createWwpnPool(fabric, wwpnpools[fabric]['blockbegin'], wwpnpools[fabric]['blockend'])
+
+
+
+        newfxns.setPowerPolicy("grid")
+        newfxns.setChassisDiscoveryPolicy(str(self.config['ucs']['links']))
+        newfxns.setGlobalQosPolicy(self.config['qos'])
