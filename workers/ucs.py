@@ -3,9 +3,10 @@
 
 """
 from worker import FlexWorker
-from functions.functions_ucs import UcsFunctions
+#from functions.functions_ucs import UcsFunctions
 from functions.newfunctions_ucs import NewUcsFunctions
-from UcsSdk import *
+from UcsSdk import UcsHandle
+
 
 class UcsWorker(FlexWorker):
     """ A child worker class that pertains specifically to UCS """
@@ -21,22 +22,25 @@ class UcsWorker(FlexWorker):
         print ucsauth
 
         handle.Login(
-            ucsauth['host'], 
-            ucsauth['user'], 
+            ucsauth['host'],
+            ucsauth['user'],
             ucsauth['pass']
         )
 
         newfxns = NewUcsFunctions(handle, self.config['general']['org'])
 
-
         """ VLANS """
-
         vlans = {}
 
         #Get a list of all VLANs, regardless of group
         for group in self.config['vlans']:
-            if group != 'storage': #Don't want to explicitly add FCoE VLANs here, that's done in the VSAN creation
-                for vlanid, vlanname in self.config['vlans'][group].iteritems():  #TODO: This is really ugly because of the VLAN layout in the config file. Maybe need to figure out a way to restructure it.
+
+            #Exclusing VLANs used for FCoE
+            if group != 'storage':
+
+                #TODO: This is really ugly because of the VLAN layout in the
+                #config file. Maybe need to figure out a way to restructure it
+                for vlanid, vlanname in self.config['vlans'][group].iteritems():
                     vlans[vlanid] = vlanname
 
         #Add all VLANs in the list
@@ -72,35 +76,18 @@ class UcsWorker(FlexWorker):
 
         """ MAC POOLS """
 
-        #TODO: Lots of shortcuts taken here. Need to come back and clean up this atrocious mess.
-        pools = self.config['ucs']['pools']
-
-        #TODO: Implement IP pool. Preferably in suborg, as housekeeping is populating ext-mgmt with dummy block
+        #Pull MAC Pool Configuration Info
+        macpools = self.config['ucs']['pools']['mac']
 
         #MAC Pools
-        for fabric in pools['mac']: #TODO: This loop is here for the future, but obviously since the name is statically set, this only works with a single pool per fabric, currently.
-            newfxns.createMacPool(fabric, pools['mac'][fabric]['blockbegin'], pools['mac'][fabric]['blockend'])
+        for fabric in macpools: #TODO: This loop is here for the future, but obviously since the name is statically set, this only works with a single pool per fabric, currently.
+            newfxns.createMacPool(fabric, macpools[fabric]['blockbegin'], macpools[fabric]['blockend'])
 
+        """ WWPN POOLS """
 
+        #Pull WWPN Pool Configuration Info
+        wwpnpools = self.config['ucs']['pools']['wwpn']
 
-
-
-
-
-
-
-
-        #I am commenting this out while I am re-developing the workflow. The functions
-        #referred to below are untouched - feel free to uncomment and use them
-        
-        #fxns = UcsFunctions(handle, self.config)
-        #fxns.ucsHousekeeping()
-        #fxns.createVLANSandVSANS()
-        #fxns.createUCSPools()
-        #fxns.ucsCreatePolicies()
-        #fxns.createBootPolicy()
-        #xns.createVNICTemplates()
-        #fxns.createVHBATemplates()
-        #fxns.createSpTemplate()
-        #fxns.spawnZerglings()
-        #DEFINE REST OF UCS WORKFLOW HERE
+        #WWPN Pools
+        for fabric in wwpnpools: #TODO: This loop is here for the future, but obviously since the name is statically set, this only works with a single pool per fabric, currently.
+            newfxns.createWwpnPool(fabric, wwpnpools[fabric]['blockbegin'], wwpnpools[fabric]['blockend'])

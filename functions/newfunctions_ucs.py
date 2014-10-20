@@ -42,7 +42,7 @@ class NewUcsFunctions(object):
             #Sets other org-related properties. Functions should refer directly
             #to self.orgNameDN - self.orgName is used only by suborg functions
             self.orgName = item.Name
-            self.orgNameDN = item.Dn
+            self.orgNameDN = item.Dn + "/"
 
         #Create requested suborg
         self.createSubOrg(self.orgName)
@@ -207,6 +207,47 @@ class NewUcsFunctions(object):
             print "MAC Pool block already exists"
 
     def removeMacPool(self, mo):
+        pass
+
+    ################
+    #  WWPN POOLS  #
+    ################
+
+    def getWwpnPool(self, poolname):
+        pass
+
+    def createWwpnPool(self, fabric, blockstart, blockend):
+        #Create WWPN Pool Object
+        try:
+            mo = self.handle.AddManagedObject(self.org, "fcpoolInitiators",
+                {
+                    "Descr": "ESXi Servers Fabric " + fabric,
+                    "Name": "ESXi-WWPN-" + fabric,
+                    "AssignmentOrder": "sequential",
+                    "PolicyOwner": "local",
+                    "Dn": self.orgNameDN + "wwpn-pool-" +
+                    "ESXi-WWPN-" + fabric
+                })
+        except UcsException:
+            print "WWPN Pool already exists"
+            mo = self.handle.GetManagedObject(None, None,
+            {
+                "Dn": self.orgNameDN + "wwpn-pool-ESXi-WWPN-" + fabric
+            })
+
+        #Create WWPN Pool Block
+#        try:
+        self.handle.AddManagedObject(mo, "fcpoolBlock",
+            {
+                "From": blockstart,
+                "To": blockend,
+                "Dn": self.orgNameDN + "wwn-pool-ESXi-WWPN-" +
+                fabric + "/block-" + blockstart + "-" + blockend
+            })
+ #       except UcsException:
+  #          print "WWPN Pool block already exists"
+
+    def removeWwpnPool(self, mo):
         pass
 
 
