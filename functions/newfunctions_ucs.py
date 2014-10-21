@@ -255,9 +255,9 @@ class NewUcsFunctions(object):
     def removeWwpnPool(self, mo):
         pass
 
-    ##############
-    #  POLICIES  #
-    ##############
+    #####################
+    #  GLOBAL POLICIES  #
+    #####################
 
     def setPowerPolicy(self, redundancy):
         try:
@@ -285,6 +285,10 @@ class NewUcsFunctions(object):
                 }, True)
         except UcsException:
             print "Error setting Chassis Discovery policy"
+
+    ##################
+    #  QOS POLICIES  #
+    ##################
 
     def setGlobalQosPolicy(self, qosconfig):
         try:
@@ -395,3 +399,102 @@ class NewUcsFunctions(object):
                 }, True)
         except UcsException:
             print "QoS Policy already exists"     
+
+    ###########################
+    #  ORG-SPECIFIC POLICIES  #
+    ###########################
+
+    def getLocalDiskPolicy(self, name):
+        pass
+
+    def createLocalDiskPolicy(self, name, mode):
+        try:
+            self.handle.AddManagedObject(self.org, "storageLocalDiskConfigPolicy", 
+                {       
+                    "Name":name, 
+                    "Descr":name, 
+                    "PolicyOwner":"local", 
+                    "ProtectConfig":"yes", 
+                    "Dn":self.orgNameDN + "local-disk-config-" + name, 
+                    "Mode":mode, 
+                    "FlexFlashState":"disable", 
+                    "FlexFlashRAIDReportingState":"disable"
+                })
+        except UcsException:
+            print "Local Disk Configuration Policy already exists"
+
+    def removeLocalDiskPolicy(self, name):
+        pass
+
+    def getHostFWPackage(self, name):
+        pass
+
+    def createHostFWPackage(self, name):
+        try:
+            self.handle.AddManagedObject(self.org, "firmwareComputeHostPack", 
+                {
+                    "Name":name, 
+                    "BladeBundleVersion":"", 
+                    "RackBundleVersion":"", 
+                    "PolicyOwner":"local", 
+                    "Dn":self.orgNameDN + "fw-host-pack-" + name, 
+                    "Mode":"staged", 
+                    "IgnoreCompCheck":"yes", 
+                    "StageSize":"0", 
+                    "Descr":"Host Firmware Package", 
+                    "UpdateTrigger":"immediate"
+                })
+        except UcsException:
+            print "Host Firmware Package already exists"
+
+    def removeHostFWPackage(self, name):
+        pass
+
+    def getMaintPolicy(self, name):
+        pass
+
+    def createMaintPolicy(self, name, policy):
+        try:
+            self.handle.AddManagedObject(self.org, "lsmaintMaintPolicy", 
+                {
+                    "Descr":name, 
+                    "SchedName":"", 
+                    "Name":name, 
+                    "Dn":self.orgNameDN + "maint-" + name, 
+                    "PolicyOwner":"local", 
+                    "UptimeDisr":policy
+                })
+        except UcsException:
+            print "Maintenance Policy already exists"
+
+    def removeMaintPolicy(self, name):
+        pass
+
+    def createNetControlPolicy(self, name):
+        try:
+            mo = self.handle.AddManagedObject(self.org, "nwctrlDefinition", 
+                {
+                    "Name":name, 
+                    "Cdp":"enabled", 
+                    "Dn":self.orgNameDN + "nwctrl-" + name, 
+                    "PolicyOwner":"local", 
+                    "MacRegisterMode":"only-native-vlan", 
+                    "UplinkFailAction":"link-down", 
+                    "Descr":name
+                })
+            mo_1 = self.handle.AddManagedObject(mo, "dpsecMac", 
+                {
+                    "Name":"", 
+                    "Dn":self.orgNameDN + "nwctrl-" + name + "/mac-sec", 
+                    "Forge":"allow", 
+                    "PolicyOwner":"local", 
+                    "Descr":""
+                }, True)
+        except UcsException:
+            print "Network Control Policy already exists"
+
+    #TODO: Tabling this for now. This is a complicated thing to do.
+    def createBootPolicy(name):
+        pass
+
+    

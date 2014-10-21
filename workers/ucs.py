@@ -1,6 +1,10 @@
 #!/usr/bin/env python
 """ UCS worker class for pyflex
 
+    In the future, this will really be the core renderer. All of the 
+    work of deleting config that shouldn't be there, or creating it
+    when it should, will be handled here.
+
 """
 from worker import FlexWorker
 #from functions.functions_ucs import UcsFunctions
@@ -92,11 +96,21 @@ class UcsWorker(FlexWorker):
         for fabric in wwpnpools: #TODO: This loop is here for the future, but obviously since the name is statically set, this only works with a single pool per fabric, currently.
             newfxns.createWwpnPool(fabric, wwpnpools[fabric]['blockbegin'], wwpnpools[fabric]['blockend'])
 
-
+        """ GLOBAL POLICIES """
 
         newfxns.setPowerPolicy("grid")
         newfxns.setChassisDiscoveryPolicy(str(self.config['ucs']['links']))
-        newfxns.setGlobalQosPolicy(self.config['qos'])
 
+        """ QOS """
+
+        newfxns.setGlobalQosPolicy(self.config['qos'])
         for classname, hostcontrol in self.config['qos']['classes'].iteritems():
             newfxns.createQosPolicy(classname, hostcontrol)
+
+        """ ORG-SPECIFIC POLICIES """
+
+        newfxns.createLocalDiskPolicy("NO_LOCAL", "no-local-storage")
+        newfxns.createLocalDiskPolicy("RAID1", "raid-mirrored")
+        newfxns.createHostFWPackage("HOST_FW_PKG")
+        newfxns.createMaintPolicy("MAINT_USERACK", "user-ack")
+        newfxns.createNetControlPolicy("NTKCTRL-CDP")
