@@ -55,11 +55,10 @@ class UcsWorker(FlexWorker):
 
         #Remove any VLANs within UCS that are not in the config
         for mo in newfxns.getVLANs().OutConfigs.GetChild():
-            if mo.Dn[:10] == "fabric/lan" and mo.Dn[:22] != "fabric/lan/net-default":
-                if int(mo.Id) in vlans:
-                    pass
-                else:
-                    newfxns.removeVLAN(mo)
+            if int(mo.Id) in vlans:
+                pass
+            else:
+                newfxns.removeVLAN(mo)
 
 
         """ VSANS """
@@ -77,8 +76,7 @@ class UcsWorker(FlexWorker):
             if int(mo.Id) in self.config['vsans']['a'] or int(mo.Id) in self.config['vsans']['b']:
                 pass
             else:
-                if int(mo.Id) != 1:
-                    newfxns.removeVSAN(mo)
+                newfxns.removeVSAN(mo)
 
         """ MAC POOLS """
 

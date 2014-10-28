@@ -17,7 +17,7 @@
 from UcsSdk import OrgOrg, UcsException, FabricVlan, UcsValidationException
 
 #Import Filters
-from UcsSdk import FilterFilter, AndFilter, EqFilter, WcardFilter
+from UcsSdk import FilterFilter, AndFilter, EqFilter, WcardFilter, NeFilter
 
 
 class NewUcsFunctions(object):
@@ -77,9 +77,16 @@ class NewUcsFunctions(object):
     ###########
 
     def getVLANs(self):
-        return self.handle.ConfigResolveClass("fabricVlan", inFilter=None)
-        #TODO: See if you can figure out how to filter by DN,
-        # and eliminate the filtering done at the ucs worker
+
+        #Retrieve only user-created VLANs
+        inFilter = FilterFilter()
+        neFilter = NeFilter()
+        neFilter.Class = "fabricVlan"
+        neFilter.Property = "name"
+        neFilter.Value = "default"
+        inFilter.AddChild(neFilter)
+
+        return self.handle.ConfigResolveClass("fabricVlan", inFilter=inFilter)
 
     def createVLAN(self, vlanid, vlanname):
         try:
@@ -124,8 +131,16 @@ class NewUcsFunctions(object):
     ###########
 
     def getVSANs(self):
-        return self.handle.ConfigResolveClass("fabricVsan", inFilter=None)
-        #TODO: Same filtering TODO as with the getVLANs method
+        
+        #Retrieve only user-created VSANs
+        inFilter = FilterFilter()
+        neFilter = NeFilter()
+        neFilter.Class = "fabricVsan"
+        neFilter.Property = "name"
+        neFilter.Value = "default"
+        inFilter.AddChild(neFilter)
+
+        return self.handle.ConfigResolveClass("fabricVsan", inFilter=inFilter)
 
     def createVSAN(self, fabricid, vsanid, vsanname):
         try:
