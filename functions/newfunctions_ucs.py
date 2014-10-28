@@ -16,6 +16,9 @@
 
 from UcsSdk import OrgOrg, UcsException, FabricVlan, UcsValidationException
 
+#Import Filters
+from UcsSdk import FilterFilter, AndFilter, EqFilter, WcardFilter
+
 
 class NewUcsFunctions(object):
     """ A working class to help ease how we work with UCS objects """
@@ -85,6 +88,7 @@ class NewUcsFunctions(object):
     #  VLANS  #
     ###########
 
+    #TODO: This differs from most "get" methods in that it is intended to return children. Maybe come up with different name?
     def getVLANs(self):
         return self.handle.ConfigResolveClass("fabricVlan", inFilter=None)
         #TODO: See if you can figure out how to filter by DN,
@@ -497,4 +501,81 @@ class NewUcsFunctions(object):
     def createBootPolicy(name):
         pass
 
+    ###############
+    #  TEMPLATES  #
+    ###############
+
+    def getVnicTemplate(self, vnicname):
+        return self.handle.GetManagedObject(None, None, {"Dn": self.orgNameDN + "lan-conn-templ-" + vnicname})
+
+    def createVnicTemplate(self, vnicprefix, fabricID):
+        try:
+            mo = self.handle.AddManagedObject(self.org, "vnicLanConnTempl", 
+                {
+                    "Name":vnicprefix + "-" + fabricID,
+                    "Descr":vnicprefix + " - Fabric " + fabricID, # TODO: Need a better description method with current "vlangroups" mechanism
+                    "SwitchId":fabricID, 
+                    "QosPolicyName":"Best-Effort", 
+                    "NwCtrlPolicyName":"NTKCTRL-CDP", 
+                    "StatsPolicyName":"default", 
+                    "TemplType":"updating-template", 
+                    "PolicyOwner":"local", 
+                    "Mtu":"9000", #Setting to 9000 here since class-default is still set to 1500, so this doesn't hurt much. TODO: Consider adding this as a configurable item. 
+                    "PinToGroupName":"", 
+                    "Dn":self.orgNameDN + "lan-conn-templ-" + vnicprefix + "-" + fabricID, 
+                    "IdentPoolName":"ESXi-MAC-" + fabricID
+                })
+        except UcsException:
+            print "vNIC Template '" + vnicprefix + "-" + fabricID + "' already exists"
+            mo = self.handle.GetManagedObject(None, None, 
+                {
+                    "Dn":self.orgNameDN + "lan-conn-templ-" + \
+                    vnicprefix + "-" + fabricID
+                }) #We need to do this because the creation of the vNIC, and it's VLANs, are separate actions
+        return mo
+
+    def removeVnicTemplate(self, templatename):
+        pass
+
+    #TODO: This differs from most "get" methods in that it is intended to return children. Maybe come up with different name?
+    def getVnicVlans(self, vnic):
+        #TODO: Only works with vNIC templates, presently
+
+        inFilter = FilterFilter()
+        wcardFilter = WcardFilter()
+        wcardFilter.Class = "vnicEtherIf"
+        wcardFilter.Property = "dn"
+        wcardFilter.Value = vnic.Dn
+        inFilter.AddChild(wcardFilter)
+
+        return self.handle.ConfigResolveClass("vnicEtherIf", inFilter=inFilter)
+        #TODO: See if you can figure out how to filter by DN,
+        # and eliminate the filtering done at the ucs worker
+
+    def createVnicVlan(self, vnic, vlanname):
+        #TODO: Only works with vNIC templates, presently
+        try:
+            self.handle.AddManagedObject(vnic, "vnicEtherIf", 
+                {
+                    "Name":vlanname, 
+                    "Dn":self.orgNameDN + "lan-conn-templ-" + vnic.Name + "/if-" + vlanname, 
+                    "DefaultNet":"no" #TODO: Currently setting no native VLAN for any vNICs, leaving it up to the downstream device to tag (for now)
+                }, True)
+        except UcsException:
+            print "vNIC Template '" + vnicprefix + "-" + fabricID + "' already contains VLAN " + vlanname #convert to logging and TODO: need to handle this better. Need to poke around at the possible exception types
     
+    def removeVnicVlan(self, vnic, vlanname):
+        #TODO: Only works with vNIC templates, presently
+        try:
+            obj = self.handle.GetManagedObject(
+                vnic, "vnicEtherIf",
+                {
+                    "Name": vlanname
+                })
+            self.handle.RemoveManagedObject(obj)
+            print "Deleted VLAN " + str(vlanname) + " from " + vnic.Dn
+
+        #TODO: This has a different exception type for missing objects
+        except UcsValidationException as e:
+            print "VLAN " + str(vlanname) + ": " + vnic.Dn + \
+                " already deleted -- " + e.errorDescr

@@ -15,6 +15,8 @@ from UcsSdk import UcsHandle
 class UcsWorker(FlexWorker):
     """ A child worker class that pertains specifically to UCS """
 
+    FABRICS = ['A', 'B']
+
     def startworker(self):
         """ Starts this worker """
 
@@ -114,3 +116,33 @@ class UcsWorker(FlexWorker):
         newfxns.createHostFWPackage("HOST_FW_PKG")
         newfxns.createMaintPolicy("MAINT_USERACK", "user-ack")
         newfxns.createNetControlPolicy("NTKCTRL-CDP")
+
+        """ TEMPLATES """
+
+        # Create vNIC Templates
+        for vnicprefix, vlangroup in self.config['ucs']['vlangroups'].iteritems():
+            for fabricid in self.FABRICS:
+                #TODO: that weird "return as list" issue (resulting in the list index below)
+                vnic = newfxns.createVnicTemplate(vnicprefix, fabricid)[0]
+                for vlanid, vlanname in self.config['vlans'][vlangroup].iteritems():
+                    newfxns.createVnicVlan(vnic, vlanname)
+        
+        templates = ["ESX-PROD-A", "ESX-PROD-B"]
+
+        for template in templates:
+
+            vnic = newfxns.getVnicTemplate(template)
+
+            #TODO: Need to check here (and anywhere else you're doing getChild) to make sure the "vnic" array has members (otherwise your search is bad)
+
+            #Remove any VLANs on this vNIC Template that are not in the config
+            for vlanMo in newfxns.getVnicVlans(vnic[0]).OutConfigs.GetChild():      #TODO: that weird "return as list" issue
+                
+                #TODO: This is a pretty dirty hack, see if you can do something better
+                vlanName = vlanMo.Dn[vlanMo.Dn.index("/if-") + 4:]
+
+                #Delete all VLANs from the vNIC Template that aren't in the "production" group of the configuration
+                if vlanName in self.config['vlans']['prod'].values():
+                    pass
+                else:
+                    newfxns.removeVnicVlan(vnic[0], vlanName)
