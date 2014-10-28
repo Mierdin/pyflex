@@ -23,8 +23,6 @@ from UcsSdk import FilterFilter, AndFilter, EqFilter, WcardFilter
 class NewUcsFunctions(object):
     """ A working class to help ease how we work with UCS objects """
 
-    FABRICS = ['A', 'B']
-
     #TODO: Currently requiring org info at start of
     def __init__(self, handle, orgName):
 
@@ -40,20 +38,15 @@ class NewUcsFunctions(object):
 
         #Set self.org object. Referred to throughout the various functions
         if orgName != "root":
-            self.org = self.getSubOrg(orgName)
+            #Create requested suborg
+            self.org = self.createSubOrg(orgName)
         else:
             self.org = self.orgroot
 
-        #For some reason, org objects are stored as lists
-        for item in self.org:
-
-            #Sets other org-related properties. Functions should refer directly
-            #to self.orgNameDN - self.orgName is used only by suborg functions
-            self.orgName = item.Name
-            self.orgNameDN = item.Dn + "/"
-
-        #Create requested suborg
-        self.createSubOrg(self.orgName)
+        #Sets other org-related properties. Functions should refer directly
+        #to self.orgNameDN - self.orgName is used only by suborg functions
+        self.orgName = self.org[0].Name
+        self.orgNameDN = self.org[0].Dn + "/"
 
         print "Instantiated New Functions"
 
@@ -68,27 +61,21 @@ class NewUcsFunctions(object):
     def createSubOrg(self, orgName):
         ''' Retrieves only sub-organizations, not root '''
         try:
-            self.handle.AddManagedObject(
+            return self.handle.AddManagedObject(
                 self.orgroot, OrgOrg.ClassId(),
                 {
-                    "Dn": "org-root/org-" + self.orgName,
-                    "Desc": self.orgName,
-                    "Name": self.orgName
+                    "Dn": "org-root/org-" + orgName,
+                    "Descr": orgName,
+                    "Name": orgName
                 })
         except UcsException:
             print "Sub-organization already exists"
-
-        self.org = self.handle.GetManagedObject(
-            None, OrgOrg.ClassId(),
-            {
-                OrgOrg.DN: self.orgNameDN
-            })
+            return self.getSubOrg(orgName)
 
     ###########
     #  VLANS  #
     ###########
 
-    #TODO: This differs from most "get" methods in that it is intended to return children. Maybe come up with different name?
     def getVLANs(self):
         return self.handle.ConfigResolveClass("fabricVlan", inFilter=None)
         #TODO: See if you can figure out how to filter by DN,
