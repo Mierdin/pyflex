@@ -113,10 +113,9 @@ class NewUcsFunctions(object):
         #twice. Once for the get method, and once for this one. See if you
         #can be more efficient (or if it's a good idea at all)
         try:
-            obj = self.handle.GetManagedObject(
-                None, FabricVlan.ClassId(),
+            obj = self.handle.GetManagedObject(None, "fabricVlan",
                 {
-                    FabricVlan.DN: mo.Dn
+                    "Dn": mo.Dn
                 })
             self.handle.RemoveManagedObject(obj)
             print "Deleted VLAN " + str(mo.Id) + ": " + mo.Name
@@ -166,9 +165,9 @@ class NewUcsFunctions(object):
 
     def removeVSAN(self, mo):
         try:
-            obj = self.handle.GetManagedObject(None, FabricVsan.ClassId(),
+            obj = self.handle.GetManagedObject(None, "fabricVsan",
                 {
-                    FabricVsan.DN: mo.Dn
+                    "Dn": mo.Dn
                 })
             self.handle.RemoveManagedObject(obj)
             print "Deleted VSAN " + str(mo.Id) + ": " + mo.Name
@@ -503,9 +502,9 @@ class NewUcsFunctions(object):
     def createBootPolicy(name):
         pass
 
-    ###############
-    #  TEMPLATES  #
-    ###############
+    ####################
+    #  VNIC TEMPLATES  #
+    ####################
 
     def getVnicTemplate(self, vnicname):
         return self.handle.GetManagedObject(None, None, {"Dn": self.orgNameDN + "lan-conn-templ-" + vnicname})
@@ -541,8 +540,6 @@ class NewUcsFunctions(object):
 
     #TODO: This differs from most "get" methods in that it is intended to return children. Maybe come up with different name?
     def getVnicVlans(self, vnic):
-        #TODO: Only works with vNIC templates, presently
-
         inFilter = FilterFilter()
         wcardFilter = WcardFilter()
         wcardFilter.Class = "vnicEtherIf"
@@ -581,3 +578,65 @@ class NewUcsFunctions(object):
         except UcsValidationException as e:
             print "VLAN " + str(vlanname) + ": " + vnic.Dn + \
                 " already deleted -- " + e.errorDescr
+
+    ####################
+    #  VHBA TEMPLATES  #
+    ####################
+
+    def getVhbaTemplate(self, vhbaname):
+        return self.handle.GetManagedObject(None, None, {"Dn": self.orgNameDN + "san-conn-templ-" + vhbaname})
+
+    def createVhbaTemplate(self, fabricID):
+        try:
+            mo = self.handle.AddManagedObject(self.org, "vnicSanConnTempl", 
+                {
+                    "Name":"ESX-VHBA-" + fabricID, 
+                    "Descr":"ESXi Servers - vHBA Fabric " + fabricID, 
+                    "SwitchId":fabricID, 
+                    "QosPolicyName":"", 
+                    "MaxDataFieldSize":"2048", 
+                    "StatsPolicyName":"default", 
+                    "TemplType":"updating-template", 
+                    "PolicyOwner":"local", 
+                    "Dn":self.orgNameDN + "san-conn-templ-ESX-VHBA-" + fabricID, 
+                    "PinToGroupName":"", 
+                    "IdentPoolName":"ESXi-WWPN-" + fabricID
+                })
+        except UcsException:
+            print "vHBA Template 'ESX-VHBA-" + fabricID + "' already exists"
+            mo = self.handle.GetManagedObject(None, None, 
+                {
+                    "Dn":self.orgNameDN + "san-conn-templ-ESX-VHBA-" + fabricID
+                })
+        return mo
+
+    def removeVhbaTemplate(self, templatename):
+        pass
+
+    def getVhbaVsan(self, vhba):
+        inFilter = FilterFilter()
+        eqFilter = EqFilter()
+        eqFilter.Class = "vnicFcIf"
+        eqFilter.Property = "dn"
+
+        # vHBAs aren't like vNICs - only one VSAN, and it's referenced thusly
+        # So no need for wildcards - match DN of vHBA, plus the below literal
+        eqFilter.Value = vhba.Dn + "/if-default"
+        inFilter.AddChild(eqFilter)
+
+        return self.handle.ConfigResolveClass("vnicFcIf", inFilter=inFilter)
+
+    def createVhbaVsan(self, vhba, vsanname):
+        #TODO: Only works with vHBA templates, presently
+        try:
+            self.handle.AddManagedObject(vhba, "vnicFcIf", 
+                {
+                    "Name": vsanname,
+                    "Dn":self.orgNameDN + "san-conn-templ-" + vhba.Name + "/if-" + vsanname
+                }, True)
+        except UcsException:
+            print "vHBA Template '" + vhba.Name + "' already contains VSAN " + vsanname #convert to logging and TODO: need to handle this better. Need to poke around at the possible exception types
+
+    def removeVhbaVsan(self, vsan):
+        #No "remove" method necessary. 
+        pass

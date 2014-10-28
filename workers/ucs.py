@@ -115,7 +115,7 @@ class UcsWorker(FlexWorker):
         newfxns.createMaintPolicy("MAINT_USERACK", "user-ack")
         newfxns.createNetControlPolicy("NTKCTRL-CDP")
 
-        """ TEMPLATES """
+        """ VNIC TEMPLATES """
 
         # Create vNIC Templates
         for vnicprefix, vlangroup in self.config['ucs']['vlangroups'].iteritems():
@@ -144,3 +144,14 @@ class UcsWorker(FlexWorker):
                     pass
                 else:
                     newfxns.removeVnicVlan(vnic[0], vlanName)
+
+        """ VHBA TEMPLATES """
+
+        # Create vHBA Templates
+        for fabricid in self.FABRICS:
+            #TODO: that weird "return as list" issue (resulting in the list index below)
+            vhba = newfxns.createVhbaTemplate(fabricid)[0]
+
+            # No removal method necessary; will override existing VSAN setting
+            for vsanid, vsanname in self.config['vsans'][fabricid.lower()].iteritems():
+                newfxns.createVhbaVsan(vhba, vsanname)
