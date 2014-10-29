@@ -96,6 +96,10 @@ class UcsWorker(FlexWorker):
         for fabric in wwpnpools: #TODO: This loop is here for the future, but obviously since the name is statically set, this only works with a single pool per fabric, currently.
             newfxns.createWwpnPool(fabric, wwpnpools[fabric]['blockbegin'], wwpnpools[fabric]['blockend'])
 
+        #TODO: UUID POOL
+
+        #TODO: WWNN POOL
+
         """ GLOBAL POLICIES """
 
         newfxns.setPowerPolicy("grid")
@@ -155,3 +159,43 @@ class UcsWorker(FlexWorker):
             # No removal method necessary; will override existing VSAN setting
             for vsanid, vsanname in self.config['vsans'][fabricid.lower()].iteritems():
                 newfxns.createVhbaVsan(vhba, vsanname)
+
+        """ SP TEMPLATES """
+
+        spt = newfxns.createSPTemplate(self.config['ucs']['sptname'])
+
+        vnics = [ #TODO: This is an ugly way to do this
+            "ESX-MGMT-A",
+            "ESX-MGMT-B",
+            "ESX-NFS-A",
+            "ESX-NFS-B",
+            "ESX-PROD-A",
+            "ESX-PROD-B"
+        ]
+
+        vhbas = [
+            "ESX-VHBA-A",
+            "ESX-VHBA-B"
+        ]
+        
+        #Create vNIC VCON assignments
+        for vnic in vnics:
+            transport = "ethernet"
+            order = str(vnics.index(vnic) + 1)
+            newfxns.setVconOrder(spt[0], vnic, transport, order)
+            newfxns.addVnicFromTemplate(spt[0], vnic)
+
+        for vhba in vhbas:
+            transport = "fc"
+            order = str(vhbas.index(vhba) + 1)
+            newfxns.setVconOrder(spt[0], vhba, transport, order)
+            newfxns.addVhbaFromTemplate(spt[0], vhba)
+
+        newfxns.setWWNNPool(spt[0], "ESXi-WWNN")
+        newfxns.setPowerState(spt[0], "admin-up")
+
+        newfxns.spawnZerglings(
+                spt[0], 
+                self.config['ucs']['spprefix'], 
+                self.config['ucs']['numbertospawn']
+            )

@@ -640,3 +640,115 @@ class NewUcsFunctions(object):
     def removeVhbaVsan(self, vsan):
         #No "remove" method necessary. 
         pass
+
+    ####################
+    #  SP TEMPLATES  #
+    ####################
+
+    def createSPTemplate(self, sptname):
+        try:
+
+             return self.handle.AddManagedObject(self.org, "lsServer",  
+                {   
+                    #TODO: Make sure to associate with server pool once that feature is implemented
+                    "Name":sptname, 
+                    "MgmtFwPolicyName":"", 
+                    "MaintPolicyName":"MAINT_USERACK", 
+                    "LocalDiskPolicyName":"NO_LOCAL",
+                    "Descr":"This is the main Service Profile Template for ESXi Servers", 
+                    "DynamicConPolicyName":"", 
+                    "Type":"updating-template", 
+                    "VconProfileName":"",  
+                    "IdentPoolName":"ESXi-UUID", #TODO: Not implemented yet
+                    "HostFwPolicyName":"HOST_FW_PKG", 
+                    "ExtIPPoolName":"ext-mgmt", 
+                    "Uuid":"0", 
+                    "ExtIPState":"pooled",  
+                    "PowerPolicyName":"default", 
+                    "Dn":self.orgNameDN + "ls-" + sptname, 
+                    "BootPolicyName":"BFS_POLICY", #TODO: Not implemented yet
+                    "PolicyOwner":"local", 
+                    "StatsPolicyName":"default"
+                })
+
+        except UcsException:
+            print "SPT CREATION - Service Profile Template '" + sptname + "' already exists" #convert to logging and TODO: need to handle this better. Need to poke around at the possible exception types
+            return self.handle.GetManagedObject(None, None, {"Dn":self.orgNameDN + "ls-" + sptname})
+
+
+    def setVconOrder(self, spt, vnic, transport, order):
+        try:
+            self.handle.AddManagedObject(self.org, "lsVConAssign", 
+                {
+                    "AdminVcon":"any", 
+                    "VnicName":vnic, 
+                    "Transport":transport, 
+                    "Dn": spt.Dn + "/assign-ethernet-vnic-" + vnic, 
+                    "Order": order
+                }, True)
+        except UcsException:
+            print "SPT CREATION - vcon already mapped" #convert to logging and TODO: need to handle this better. Need to poke around at the possible exception types
+
+    def addVnicFromTemplate(self, spt, vnicname):
+        try:
+            self.handle.AddManagedObject(spt, "vnicEther", 
+                {
+                    "QosPolicyName":"", 
+                    "NwCtrlPolicyName":"", 
+                    "Name":vnicname, 
+                    "IdentPoolName":"",
+                    "AdminVcon":"any", 
+                    "PinToGroupName":"", 
+                    "StatsPolicyName":"default", 
+                    "AdaptorProfileName":"VMWare", 
+                    "SwitchId":vnicname[-1:], #TODO: Currently using string slicing to get Fabric ID. Might want to think about a different method.
+                    "Dn": spt.Dn + "/ether-" + vnicname, 
+                    "Addr":"derived",
+                    "NwTemplName":vnicname
+                })
+        except UcsException as e:
+            print "VNIC MAPPING - vnic already mapped to SPT -- " + e.errorDescr #convert to logging and TODO: need to handle this better. Need to poke around at the possible exception types
+
+
+    def addVhbaFromTemplate(self, spt, vhbaname):
+        try:
+            vnicfc = self.handle.AddManagedObject(spt, "vnicFc", 
+                {
+                    "MaxDataFieldSize":"2048", 
+                    "Name":vhbaname, 
+                    "PersBindClear":"no", 
+                    "AdminVcon":"any", 
+                    "PersBind":"disabled", 
+                    "StatsPolicyName":"default", 
+                    "AdaptorProfileName":"VMWare", 
+                    "SwitchId":vhbaname[-1:], #TODO: Currently using string slicing to get Fabric ID. Might want to think about a different method.
+                    "Dn": spt.Dn + "/fc-" + vhbaname, 
+                    "Addr":"derived", 
+                    "NwTemplName":vhbaname
+                })
+        except UcsException as e:
+            print "VHBA MAPPING - vhba already mapped to SPT -- " +  e.errorDescr #convert to logging and TODO: need to handle this better. Need to poke around at the possible exception types
+
+    def setWWNNPool(self, spt, poolname):
+        try:
+            self.handle.AddManagedObject(spt, "vnicFcNode", 
+                {
+                    "Addr":"pool-derived", 
+                    "Dn": spt.Dn + "/fc-node", 
+                    "IdentPoolName": poolname
+                }, True)
+        except UcsException:
+            print "SPT WWNN pool set already" #convert to logging and TODO: need to handle this better. Need to poke around at the possible exception types
+
+    def setPowerState(self, spt, state):
+        try:
+            self.handle.AddManagedObject(spt, "lsPower", 
+                {
+                    "Dn": spt.Dn + "/power",
+                    "State": state
+                }, True)
+        except UcsException:
+            print "SPT desired power state set already" #convert to logging and TODO: need to handle this better. Need to poke around at the possible exception types
+    
+    def spawnZerglings(self, spt, spprefix, number):
+        self.handle.LsInstantiateNTemplate(spt.Dn, number, spprefix, self.orgNameDN[:-1])
