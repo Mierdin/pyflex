@@ -200,9 +200,9 @@ class NewUcsFunctions(object):
         except UcsException:
             print "MAC Pool " + "ESXi-MAC-" + fabric + " already exists"
             mo = self.handle.GetManagedObject(None, None,
-            {
-                "Dn": self.orgNameDN + "mac-pool-ESXi-MAC-" + fabric
-            })
+                {
+                    "Dn": self.orgNameDN + "mac-pool-ESXi-MAC-" + fabric
+                })
 
         #Create Mac Pool Block
         try:
@@ -214,7 +214,8 @@ class NewUcsFunctions(object):
                     fabric + "/block-" + blockstart + "-" + blockend
                 })
         except UcsException:
-            print "MAC Pool block " + blockstart + "-" + blockend + " already exists"
+            print "MAC Pool block " + blockstart + \
+                "-" + blockend + " already exists"
 
     def removeMacPool(self, mo):
         pass
@@ -255,7 +256,8 @@ class NewUcsFunctions(object):
                     fabric + "/block-" + blockstart + "-" + blockend
                 })
         except UcsException:
-            print "WWPN Pool block " + blockstart + "-" + blockend + " already exists"
+            print "WWPN Pool block " + blockstart + \
+                "-" + blockend + " already exists"
 
     def removeWwpnPool(self, mo):
         pass
@@ -266,11 +268,11 @@ class NewUcsFunctions(object):
 
     def setPowerPolicy(self, redundancy):
         try:
-            self.handle.AddManagedObject(self.orgroot, "computePsuPolicy", 
+            self.handle.AddManagedObject(self.orgroot, "computePsuPolicy",
                 {
-                    "PolicyOwner": "local", 
-                    "Redundancy": redundancy, 
-                    "Dn": "org-root/psu-policy", 
+                    "PolicyOwner": "local",
+                    "Redundancy": redundancy,
+                    "Dn": "org-root/psu-policy",
                     "Descr": ""
                 }, True)
         except UcsException:
@@ -278,14 +280,15 @@ class NewUcsFunctions(object):
 
     def setChassisDiscoveryPolicy(self, links):
         try:
-            self.handle.AddManagedObject(self.orgroot, "computeChassisDiscPolicy", 
+            self.handle.AddManagedObject(
+                self.orgroot, "computeChassisDiscPolicy",
                 {
-                    "Descr": "", 
-                    "PolicyOwner": "local", 
-                    "LinkAggregationPref": "port-channel", 
-                    "Action": links, 
-                    "Name": "", 
-                    "Rebalance": "user-acknowledged", 
+                    "Descr": "",
+                    "PolicyOwner": "local",
+                    "LinkAggregationPref": "port-channel",
+                    "Action": links,
+                    "Name": "",
+                    "Rebalance": "user-acknowledged",
                     "Dn": "org-root/chassis-discovery"
                 }, True)
         except UcsException:
@@ -307,78 +310,81 @@ class NewUcsFunctions(object):
                 defmtu = "normal"
 
             #Position ourselves properly within the MO tree
-            obj = self.handle.GetManagedObject(None, None, {"Dn":"fabric/lan"})
-            mo = self.handle.AddManagedObject(obj, "qosclassDefinition", 
+            obj = self.handle.GetManagedObject(None, None,
                 {
-                    "PolicyOwner":"local", 
-                    "Dn":"fabric/lan/classes", 
-                    "Descr":""
+                    "Dn": "fabric/lan"
+                })
+            mo = self.handle.AddManagedObject(obj, "qosclassDefinition",
+                {
+                    "PolicyOwner": "local",
+                    "Dn": "fabric/lan/classes",
+                    "Descr": ""
                 }, True)
 
             #Set params for Platinum class
-            self.handle.AddManagedObject(mo, "qosclassEthClassified", 
+            self.handle.AddManagedObject(mo, "qosclassEthClassified",
                 {
-                    "Priority":"platinum",
-                    "Mtu":"9126", 
-                    "Name":"", 
-                    "Dn":"fabric/lan/classes/class-platinum", 
-                    "Weight":"10", 
-                    "AdminState":"disabled", 
-                    "Cos":"5", 
-                    "Drop":"drop", 
-                    "MulticastOptimize":"no"
+                    "Priority": "platinum",
+                    "Mtu": "9126",
+                    "Name": "",
+                    "Dn": "fabric/lan/classes/class-platinum",
+                    "Weight": "10",
+                    "AdminState": "disabled",
+                    "Cos": "5",
+                    "Drop": "drop",
+                    "MulticastOptimize": "no"
                 }, True)
 
             #Set params for Gold class
-            self.handle.AddManagedObject(mo, "qosclassEthClassified", 
+            self.handle.AddManagedObject(mo, "qosclassEthClassified",
                 {
-                    "Priority":"gold",
-                    "Mtu":"9126", 
-                    "Name":"", 
-                    "Dn":"fabric/lan/classes/class-gold", 
-                    "Weight":"9", 
-                    "AdminState":"enabled", 
-                    "Cos":"4", 
-                    "Drop":"drop", 
-                    "MulticastOptimize":"no"
+                    "Priority": "gold",
+                    "Mtu": "9126",
+                    "Name": "",
+                    "Dn": "fabric/lan/classes/class-gold",
+                    "Weight": "9",
+                    "AdminState": "enabled",
+                    "Cos": "4",
+                    "Drop": "drop",
+                    "MulticastOptimize": "no"
                 }, True)
 
             #Set params for Silver class
-            self.handle.AddManagedObject(mo, "qosclassEthClassified", 
+            self.handle.AddManagedObject(mo, "qosclassEthClassified",
                 {
-                    "Priority":"silver",
-                    "Mtu":"9126", 
-                    "Name":"", 
-                    "Dn":"fabric/lan/classes/class-silver", 
-                    "Weight":"8", 
-                    "AdminState":"enabled", 
-                    "Cos":"2", 
-                    "Drop":"drop", 
-                    "MulticastOptimize":"no"
+                    "Priority": "silver",
+                    "Mtu": "9126",
+                    "Name": "",
+                    "Dn": "fabric/lan/classes/class-silver",
+                    "Weight": "8",
+                    "AdminState": "enabled",
+                    "Cos": "2",
+                    "Drop": "drop",
+                    "MulticastOptimize": "no"
                 }, True)
 
             #Set params for Bronze class
-            self.handle.AddManagedObject(mo, "qosclassEthClassified", 
+            self.handle.AddManagedObject(mo, "qosclassEthClassified",
                 {
-                    "Priority":"bronze",
-                    "Mtu":"9126", 
-                    "Name":"", 
-                    "Dn":"fabric/lan/classes/class-bronze", 
-                    "Weight":"7", 
-                    "AdminState":"enabled", 
-                    "Cos":"1", 
-                    "Drop":"drop", 
-                    "MulticastOptimize":"no"
+                    "Priority": "bronze",
+                    "Mtu": "9126",
+                    "Name": "",
+                    "Dn": "fabric/lan/classes/class-bronze",
+                    "Weight": "7",
+                    "AdminState": "enabled",
+                    "Cos": "1",
+                    "Drop": "drop",
+                    "MulticastOptimize": "no"
                 }, True)
 
             #Set params for Best-Effort class
             self.handle.AddManagedObject(mo, "qosclassEthBE",
                 {
-                    "Name":"",
-                    "MulticastOptimize":"no",
-                    "Mtu":defmtu,
-                    "Dn":"fabric/lan/classes/class-best-effort",
-                    "Weight":"5"
+                    "Name": "",
+                    "MulticastOptimize": "no",
+                    "Mtu": defmtu,
+                    "Dn": "fabric/lan/classes/class-best-effort",
+                    "Weight": "5"
                 },
                 True)
         except UcsException:
@@ -386,21 +392,21 @@ class NewUcsFunctions(object):
 
     def createQosPolicy(self, classname, hostcontrol):
         try:
-            mo = self.handle.AddManagedObject(self.org, "epqosDefinition", 
+            mo = self.handle.AddManagedObject(self.org, "epqosDefinition",
                 {
-                    "Name":classname, 
-                    "Dn":self.orgNameDN + "ep-qos-" + classname, 
-                    "PolicyOwner":"local", 
-                    "Descr":classname + " QoS Policy"
+                    "Name": classname,
+                    "Dn": self.orgNameDN + "ep-qos-" + classname,
+                    "PolicyOwner": "local",
+                    "Descr": classname + " QoS Policy"
                 })
-            self.handle.AddManagedObject(mo, "epqosEgress", 
+            self.handle.AddManagedObject(mo, "epqosEgress",
                 {
-                    "Name":"", 
-                    "Burst":"10240", 
-                    "HostControl":hostcontrol, 
-                    "Prio":classname.lower(), 
-                    "Dn":self.orgNameDN + "ep-qos-" + classname + "/egress", 
-                    "Rate":"line-rate"
+                    "Name": "",
+                    "Burst": "10240",
+                    "HostControl": hostcontrol,
+                    "Prio": classname.lower(),
+                    "Dn": self.orgNameDN + "ep-qos-" + classname + "/egress",
+                    "Rate": "line-rate"
                 }, True)
         except UcsException:
             print "QoS Policy already exists"     
@@ -414,16 +420,17 @@ class NewUcsFunctions(object):
 
     def createLocalDiskPolicy(self, name, mode):
         try:
-            self.handle.AddManagedObject(self.org, "storageLocalDiskConfigPolicy", 
-                {       
-                    "Name":name, 
-                    "Descr":name, 
-                    "PolicyOwner":"local", 
-                    "ProtectConfig":"yes", 
-                    "Dn":self.orgNameDN + "local-disk-config-" + name, 
-                    "Mode":mode, 
-                    "FlexFlashState":"disable", 
-                    "FlexFlashRAIDReportingState":"disable"
+            self.handle.AddManagedObject(
+                self.org, "storageLocalDiskConfigPolicy",
+                {
+                    "Name": name,
+                    "Descr": name,
+                    "PolicyOwner": "local",
+                    "ProtectConfig": "yes",
+                    "Dn": self.orgNameDN + "local-disk-config-" + name,
+                    "Mode": mode,
+                    "FlexFlashState": "disable",
+                    "FlexFlashRAIDReportingState": "disable"
                 })
         except UcsException:
             print "Local Disk Configuration Policy already exists"
@@ -436,18 +443,19 @@ class NewUcsFunctions(object):
 
     def createHostFWPackage(self, name):
         try:
-            self.handle.AddManagedObject(self.org, "firmwareComputeHostPack", 
+            self.handle.AddManagedObject(
+                self.org, "firmwareComputeHostPack",
                 {
-                    "Name":name, 
-                    "BladeBundleVersion":"", 
-                    "RackBundleVersion":"", 
-                    "PolicyOwner":"local", 
-                    "Dn":self.orgNameDN + "fw-host-pack-" + name, 
-                    "Mode":"staged", 
-                    "IgnoreCompCheck":"yes", 
-                    "StageSize":"0", 
-                    "Descr":"Host Firmware Package", 
-                    "UpdateTrigger":"immediate"
+                    "Name": name,
+                    "BladeBundleVersion": "",
+                    "RackBundleVersion": "",
+                    "PolicyOwner": "local",
+                    "Dn": self.orgNameDN + "fw-host-pack-" + name,
+                    "Mode": "staged",
+                    "IgnoreCompCheck": "yes",
+                    "StageSize": "0",
+                    "Descr": "Host Firmware Package",
+                    "UpdateTrigger": "immediate"
                 })
         except UcsException:
             print "Host Firmware Package already exists"
@@ -460,14 +468,14 @@ class NewUcsFunctions(object):
 
     def createMaintPolicy(self, name, policy):
         try:
-            self.handle.AddManagedObject(self.org, "lsmaintMaintPolicy", 
-                {
-                    "Descr":name, 
-                    "SchedName":"", 
-                    "Name":name, 
-                    "Dn":self.orgNameDN + "maint-" + name, 
-                    "PolicyOwner":"local", 
-                    "UptimeDisr":policy
+            self.handle.AddManagedObject(
+                self.org, "lsmaintMaintPolicy", {
+                    "Descr": name,
+                    "SchedName": "",
+                    "Name": name,
+                    "Dn": self.orgNameDN + "maint-" + name,
+                    "PolicyOwner": "local",
+                    "UptimeDisr": policy
                 })
         except UcsException:
             print "Maintenance Policy already exists"
@@ -477,24 +485,16 @@ class NewUcsFunctions(object):
 
     def createNetControlPolicy(self, name):
         try:
-            mo = self.handle.AddManagedObject(self.org, "nwctrlDefinition", 
-                {
-                    "Name":name, 
-                    "Cdp":"enabled", 
-                    "Dn":self.orgNameDN + "nwctrl-" + name, 
-                    "PolicyOwner":"local", 
-                    "MacRegisterMode":"only-native-vlan", 
-                    "UplinkFailAction":"link-down", 
-                    "Descr":name
+            mo = self.handle.AddManagedObject(
+                self.org, "nwctrlDefinition", {
+                    "Name": name,
+                    "Cdp": "enabled",
+                    "Dn": self.orgNameDN + "nwctrl-" + name,
+                    "PolicyOwner": "local",
+                    "MacRegisterMode": "only-native-vlan",
+                    "UplinkFailAction": "link-down",
+                    "Descr": name
                 })
-            mo_1 = self.handle.AddManagedObject(mo, "dpsecMac", 
-                {
-                    "Name":"", 
-                    "Dn":self.orgNameDN + "nwctrl-" + name + "/mac-sec", 
-                    "Forge":"allow", 
-                    "PolicyOwner":"local", 
-                    "Descr":""
-                }, True)
         except UcsException:
             print "Network Control Policy already exists"
 
@@ -507,33 +507,34 @@ class NewUcsFunctions(object):
     ####################
 
     def getVnicTemplate(self, vnicname):
-        return self.handle.GetManagedObject(None, None, {"Dn": self.orgNameDN + "lan-conn-templ-" + vnicname})
+        return self.handle.GetManagedObject(None, None, {
+            "Dn": self.orgNameDN + "lan-conn-templ-" + vnicname
+            })
 
     def createVnicTemplate(self, vnicprefix, fabricID):
         try:
-            mo = self.handle.AddManagedObject(self.org, "vnicLanConnTempl", 
-                {
-                    "Name":vnicprefix + "-" + fabricID,
-                    "Descr":vnicprefix + " - Fabric " + fabricID, # TODO: Need a better description method with current "vlangroups" mechanism
-                    "SwitchId":fabricID, 
-                    "QosPolicyName":"Best-Effort", 
-                    "NwCtrlPolicyName":"NTKCTRL-CDP", 
-                    "StatsPolicyName":"default", 
-                    "TemplType":"updating-template", 
-                    "PolicyOwner":"local", 
-                    "Mtu":"9000", #Setting to 9000 here since class-default is still set to 1500, so this doesn't hurt much. TODO: Consider adding this as a configurable item. 
-                    "PinToGroupName":"", 
-                    "Dn":self.orgNameDN + "lan-conn-templ-" + vnicprefix + "-" + fabricID, 
-                    "IdentPoolName":"ESXi-MAC-" + fabricID
+            return self.handle.AddManagedObject(
+                self.org, "vnicLanConnTempl", {
+                    "Name": vnicprefix + "-" + fabricID,
+                    "Descr": vnicprefix + " - Fabric " + fabricID,
+                    "SwitchId": fabricID,
+                    "QosPolicyName": "Best-Effort",
+                    "NwCtrlPolicyName": "NTKCTRL-CDP",
+                    "StatsPolicyName": "default",
+                    "TemplType": "updating-template",
+                    "PolicyOwner": "local",
+                    "Mtu": "9000", #TODO: Configurable item?
+                    "PinToGroupName": "",
+
+                    "Dn": self.orgNameDN + "lan-conn-templ-" +
+                    vnicprefix + "-" + fabricID,
+
+                    "IdentPoolName": "ESXi-MAC-" + fabricID
                 })
         except UcsException:
-            print "vNIC Template '" + vnicprefix + "-" + fabricID + "' already exists"
-            mo = self.handle.GetManagedObject(None, None, 
-                {
-                    "Dn":self.orgNameDN + "lan-conn-templ-" + \
-                    vnicprefix + "-" + fabricID
-                }) #We need to do this because the creation of the vNIC, and it's VLANs, are separate actions
-        return mo
+            print "vNIC Template '" + vnicprefix + "-" + \
+                fabricID + "' already exists"
+            return self.getVnicTemplate(vnicprefix + "-" + fabricID)
 
     def removeVnicTemplate(self, templatename):
         pass
@@ -554,15 +555,18 @@ class NewUcsFunctions(object):
     def createVnicVlan(self, vnic, vlanname):
         #TODO: Only works with vNIC templates, presently
         try:
-            self.handle.AddManagedObject(vnic, "vnicEtherIf", 
-                {
-                    "Name":vlanname, 
-                    "Dn":self.orgNameDN + "lan-conn-templ-" + vnic.Name + "/if-" + vlanname, 
-                    "DefaultNet":"no" #TODO: Currently setting no native VLAN for any vNICs, leaving it up to the downstream device to tag (for now)
-                }, True)
+            self.handle.AddManagedObject(vnic, "vnicEtherIf", {
+                "Name": vlanname,
+
+                "Dn": self.orgNameDN + "lan-conn-templ-" +
+                vnic.Name + "/if-" + vlanname,
+
+                "DefaultNet": "no"
+            }, True)
         except UcsException:
-            print "vNIC Template '" + vnicprefix + "-" + fabricID + "' already contains VLAN " + vlanname #convert to logging and TODO: need to handle this better. Need to poke around at the possible exception types
-    
+            print "vNIC Template '" + vnicprefix + \
+                "-" + fabricID + "' already contains VLAN " + vlanname
+
     def removeVnicVlan(self, vnic, vlanname):
         #TODO: Only works with vNIC templates, presently
         try:
@@ -584,30 +588,34 @@ class NewUcsFunctions(object):
     ####################
 
     def getVhbaTemplate(self, vhbaname):
-        return self.handle.GetManagedObject(None, None, {"Dn": self.orgNameDN + "san-conn-templ-" + vhbaname})
+        return self.handle.GetManagedObject(None, None, {
+            "Dn": self.orgNameDN + "san-conn-templ-" + vhbaname
+        })
 
     def createVhbaTemplate(self, fabricID):
         try:
-            mo = self.handle.AddManagedObject(self.org, "vnicSanConnTempl", 
-                {
-                    "Name":"ESX-VHBA-" + fabricID, 
-                    "Descr":"ESXi Servers - vHBA Fabric " + fabricID, 
-                    "SwitchId":fabricID, 
-                    "QosPolicyName":"", 
-                    "MaxDataFieldSize":"2048", 
-                    "StatsPolicyName":"default", 
-                    "TemplType":"updating-template", 
-                    "PolicyOwner":"local", 
-                    "Dn":self.orgNameDN + "san-conn-templ-ESX-VHBA-" + fabricID, 
-                    "PinToGroupName":"", 
-                    "IdentPoolName":"ESXi-WWPN-" + fabricID
-                })
+            mo = self.handle.AddManagedObject(self.org, "vnicSanConnTempl", {
+                "Name": "ESX-VHBA-" + fabricID,
+                "Descr": "ESXi Servers - vHBA Fabric " + fabricID,
+                "SwitchId": fabricID,
+                "QosPolicyName": "",
+                "MaxDataFieldSize": "2048",
+                "StatsPolicyName": "default",
+                "TemplType": "updating-template",
+                "PolicyOwner": "local",
+
+                "Dn": self.orgNameDN + "san-conn-templ-ESX-VHBA-" +
+                fabricID,
+
+                "PinToGroupName": "",
+                "IdentPoolName": "ESXi-WWPN-" + fabricID
+            })
         except UcsException:
             print "vHBA Template 'ESX-VHBA-" + fabricID + "' already exists"
-            mo = self.handle.GetManagedObject(None, None, 
-                {
-                    "Dn":self.orgNameDN + "san-conn-templ-ESX-VHBA-" + fabricID
-                })
+            mo = self.handle.GetManagedObject(None, None, {
+                "Dn": self.orgNameDN + "san-conn-templ-ESX-VHBA-" +
+                fabricID
+            })
         return mo
 
     def removeVhbaTemplate(self, templatename):
@@ -629,16 +637,19 @@ class NewUcsFunctions(object):
     def createVhbaVsan(self, vhba, vsanname):
         #TODO: Only works with vHBA templates, presently
         try:
-            self.handle.AddManagedObject(vhba, "vnicFcIf", 
-                {
-                    "Name": vsanname,
-                    "Dn":self.orgNameDN + "san-conn-templ-" + vhba.Name + "/if-" + vsanname
-                }, True)
+            self.handle.AddManagedObject(vhba, "vnicFcIf", {
+                "Name": vsanname,
+
+                "Dn": self.orgNameDN + "san-conn-templ-" +
+                vhba.Name + "/if-" + vsanname
+
+            }, True)
         except UcsException:
-            print "vHBA Template '" + vhba.Name + "' already contains VSAN " + vsanname #convert to logging and TODO: need to handle this better. Need to poke around at the possible exception types
+            print "vHBA Template '" + vhba.Name + \
+                "' already contains VSAN " + vsanname
 
     def removeVhbaVsan(self, vsan):
-        #No "remove" method necessary. 
+        # No "remove" method necessary.
         pass
 
     ####################
@@ -648,107 +659,103 @@ class NewUcsFunctions(object):
     def createSPTemplate(self, sptname):
         try:
 
-             return self.handle.AddManagedObject(self.org, "lsServer",  
-                {   
-                    #TODO: Make sure to associate with server pool once that feature is implemented
-                    "Name":sptname, 
-                    "MgmtFwPolicyName":"", 
-                    "MaintPolicyName":"MAINT_USERACK", 
-                    "LocalDiskPolicyName":"NO_LOCAL",
-                    "Descr":"This is the main Service Profile Template for ESXi Servers", 
-                    "DynamicConPolicyName":"", 
-                    "Type":"updating-template", 
-                    "VconProfileName":"",  
-                    "IdentPoolName":"ESXi-UUID", #TODO: Not implemented yet
-                    "HostFwPolicyName":"HOST_FW_PKG", 
-                    "ExtIPPoolName":"ext-mgmt", 
-                    "Uuid":"0", 
-                    "ExtIPState":"pooled",  
-                    "PowerPolicyName":"default", 
-                    "Dn":self.orgNameDN + "ls-" + sptname, 
-                    "BootPolicyName":"BFS_POLICY", #TODO: Not implemented yet
-                    "PolicyOwner":"local", 
-                    "StatsPolicyName":"default"
-                })
+            return self.handle.AddManagedObject(self.org, "lsServer", {
+                "Name": sptname,
+                "MgmtFwPolicyName": "",
+                "MaintPolicyName": "MAINT_USERACK",
+                "LocalDiskPolicyName": "NO_LOCAL",
+                "Descr": "ESXi Servers",
+                "DynamicConPolicyName": "",
+                "Type": "updating-template",
+                "VconProfileName": "",
+                "IdentPoolName": "ESXi-UUID",# TODO: Not implemented yet
+                "HostFwPolicyName": "HOST_FW_PKG",
+                "ExtIPPoolName": "ext-mgmt",
+                "Uuid": "0",
+                "ExtIPState": "pooled",
+                "PowerPolicyName": "default",
+                "Dn": self.orgNameDN + "ls-" + sptname,
+                "BootPolicyName": "BFS_POLICY",# TODO: Not implemented yet
+                "PolicyOwner": "local",
+                "StatsPolicyName": "default"
+            })
 
         except UcsException:
-            print "SPT CREATION - Service Profile Template '" + sptname + "' already exists" #convert to logging and TODO: need to handle this better. Need to poke around at the possible exception types
-            return self.handle.GetManagedObject(None, None, {"Dn":self.orgNameDN + "ls-" + sptname})
-
+            print "SPT CREATION - Service Profile Template '" + \
+                sptname + "' already exists"
+            return self.handle.GetManagedObject(None, None, {
+                "Dn": self.orgNameDN + "ls-" + sptname
+            })
 
     def setVconOrder(self, spt, vnic, transport, order):
         try:
-            self.handle.AddManagedObject(self.org, "lsVConAssign", 
-                {
-                    "AdminVcon":"any", 
-                    "VnicName":vnic, 
-                    "Transport":transport, 
-                    "Dn": spt.Dn + "/assign-ethernet-vnic-" + vnic, 
-                    "Order": order
-                }, True)
+            self.handle.AddManagedObject(self.org, "lsVConAssign", {
+                "AdminVcon": "any",
+                "VnicName": vnic,
+                "Transport": transport,
+                "Dn": spt.Dn + "/assign-ethernet-vnic-" + vnic,
+                "Order": order
+            }, True)
         except UcsException:
-            print "SPT CREATION - vcon already mapped" #convert to logging and TODO: need to handle this better. Need to poke around at the possible exception types
+            print "SPT CREATION - vcon already mapped"
 
     def addVnicFromTemplate(self, spt, vnicname):
         try:
-            self.handle.AddManagedObject(spt, "vnicEther", 
-                {
-                    "QosPolicyName":"", 
-                    "NwCtrlPolicyName":"", 
-                    "Name":vnicname, 
-                    "IdentPoolName":"",
-                    "AdminVcon":"any", 
-                    "PinToGroupName":"", 
-                    "StatsPolicyName":"default", 
-                    "AdaptorProfileName":"VMWare", 
-                    "SwitchId":vnicname[-1:], #TODO: Currently using string slicing to get Fabric ID. Might want to think about a different method.
-                    "Dn": spt.Dn + "/ether-" + vnicname, 
-                    "Addr":"derived",
-                    "NwTemplName":vnicname
-                })
+            self.handle.AddManagedObject(spt, "vnicEther", {
+                "QosPolicyName": "",
+                "NwCtrlPolicyName": "",
+                "Name": vnicname,
+                "IdentPoolName": "",
+                "AdminVcon": "any",
+                "PinToGroupName": "",
+                "StatsPolicyName": "default",
+                "AdaptorProfileName": "VMWare",
+                "SwitchId": vnicname[-1:], #TODO: kind of a hack right now
+                "Dn": spt.Dn + "/ether-" + vnicname,
+                "Addr": "derived",
+                "NwTemplName": vnicname
+            })
         except UcsException as e:
-            print "VNIC MAPPING - vnic already mapped to SPT -- " + e.errorDescr #convert to logging and TODO: need to handle this better. Need to poke around at the possible exception types
-
+            print "VNIC MAP - vnic already mapped to SPT -- " + e.errorDescr
 
     def addVhbaFromTemplate(self, spt, vhbaname):
         try:
-            vnicfc = self.handle.AddManagedObject(spt, "vnicFc", 
-                {
-                    "MaxDataFieldSize":"2048", 
-                    "Name":vhbaname, 
-                    "PersBindClear":"no", 
-                    "AdminVcon":"any", 
-                    "PersBind":"disabled", 
-                    "StatsPolicyName":"default", 
-                    "AdaptorProfileName":"VMWare", 
-                    "SwitchId":vhbaname[-1:], #TODO: Currently using string slicing to get Fabric ID. Might want to think about a different method.
-                    "Dn": spt.Dn + "/fc-" + vhbaname, 
-                    "Addr":"derived", 
-                    "NwTemplName":vhbaname
-                })
+            self.handle.AddManagedObject(spt, "vnicFc", {
+                "MaxDataFieldSize": "2048",
+                "Name": vhbaname,
+                "PersBindClear": "no",
+                "AdminVcon": "any",
+                "PersBind": "disabled",
+                "StatsPolicyName": "default",
+                "AdaptorProfileName": "VMWare",
+                "SwitchId": vhbaname[-1:], #TODO: kind of a hack right now
+                "Dn": spt.Dn + "/fc-" + vhbaname,
+                "Addr": "derived",
+                "NwTemplName": vhbaname
+            })
         except UcsException as e:
-            print "VHBA MAPPING - vhba already mapped to SPT -- " +  e.errorDescr #convert to logging and TODO: need to handle this better. Need to poke around at the possible exception types
+            print "VHBA MAP - vhba already mapped to SPT -- " + e.errorDescr
 
     def setWWNNPool(self, spt, poolname):
         try:
-            self.handle.AddManagedObject(spt, "vnicFcNode", 
-                {
-                    "Addr":"pool-derived", 
-                    "Dn": spt.Dn + "/fc-node", 
-                    "IdentPoolName": poolname
-                }, True)
+            self.handle.AddManagedObject(spt, "vnicFcNode", {
+                "Addr": "pool-derived",
+                "Dn": spt.Dn + "/fc-node",
+                "IdentPoolName": poolname
+            }, True)
         except UcsException:
-            print "SPT WWNN pool set already" #convert to logging and TODO: need to handle this better. Need to poke around at the possible exception types
+            print "SPT WWNN pool already set"
 
     def setPowerState(self, spt, state):
         try:
-            self.handle.AddManagedObject(spt, "lsPower", 
-                {
-                    "Dn": spt.Dn + "/power",
-                    "State": state
-                }, True)
+            self.handle.AddManagedObject(spt, "lsPower", {
+                "Dn": spt.Dn + "/power",
+                "State": state
+            }, True)
         except UcsException:
-            print "SPT desired power state set already" #convert to logging and TODO: need to handle this better. Need to poke around at the possible exception types
-    
+            print "SPT desired power state already set"
+
     def spawnZerglings(self, spt, spprefix, number):
-        self.handle.LsInstantiateNTemplate(spt.Dn, number, spprefix, self.orgNameDN[:-1])
+        self.handle.LsInstantiateNTemplate(
+            spt.Dn, number, spprefix, self.orgNameDN[:-1]
+        )

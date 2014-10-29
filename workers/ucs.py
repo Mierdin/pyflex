@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """ UCS worker class for pyflex
 
-    In the future, this will really be the core renderer. All of the 
+    In the future, this will really be the core renderer. All of the
     work of deleting config that shouldn't be there, or creating it
     when it should, will be handled here.
 
@@ -46,7 +46,9 @@ class UcsWorker(FlexWorker):
 
                 #TODO: This is really ugly because of the VLAN layout in the
                 #config file. Maybe need to figure out a way to restructure it
-                for vlanid, vlanname in self.config['vlans'][group].iteritems():
+                for vlanid, vlanname in self.config['vlans'][group] \
+                        .iteritems():
+
                     vlans[vlanid] = vlanname
 
         #Add all VLANs in the list
@@ -55,15 +57,12 @@ class UcsWorker(FlexWorker):
 
         #Remove any VLANs within UCS that are not in the config
         for mo in newfxns.getVLANs().OutConfigs.GetChild():
-            if int(mo.Id) in vlans:
+            if mo.Name in vlans.values():
                 pass
             else:
                 newfxns.removeVLAN(mo)
 
-
         """ VSANS """
-
-        vsans = {}
 
         #Create VSANs from the list
         for vsanid, vsanname in self.config['vsans']['a'].iteritems():
@@ -73,7 +72,8 @@ class UcsWorker(FlexWorker):
 
         #Remove any VSANs within UCS that are not in the config
         for mo in newfxns.getVSANs().OutConfigs.GetChild():
-            if int(mo.Id) in self.config['vsans']['a'] or int(mo.Id) in self.config['vsans']['b']:
+            if mo.Name in self.config['vsans']['a'].values() or \
+                    mo.Name in self.config['vsans']['b'].values():
                 pass
             else:
                 newfxns.removeVSAN(mo)
@@ -84,8 +84,12 @@ class UcsWorker(FlexWorker):
         macpools = self.config['ucs']['pools']['mac']
 
         #MAC Pools
-        for fabric in macpools: #TODO: This loop is here for the future, but obviously since the name is statically set, this only works with a single pool per fabric, currently.
-            newfxns.createMacPool(fabric, macpools[fabric]['blockbegin'], macpools[fabric]['blockend'])
+        for fabric in macpools:
+            newfxns.createMacPool(
+                fabric,
+                macpools[fabric]['blockbegin'],
+                macpools[fabric]['blockend']
+            )
 
         """ WWPN POOLS """
 
@@ -93,8 +97,12 @@ class UcsWorker(FlexWorker):
         wwpnpools = self.config['ucs']['pools']['wwpn']
 
         #WWPN Pools
-        for fabric in wwpnpools: #TODO: This loop is here for the future, but obviously since the name is statically set, this only works with a single pool per fabric, currently.
-            newfxns.createWwpnPool(fabric, wwpnpools[fabric]['blockbegin'], wwpnpools[fabric]['blockend'])
+        for fabric in wwpnpools:
+            newfxns.createWwpnPool(
+                fabric,
+                wwpnpools[fabric]['blockbegin'],
+                wwpnpools[fabric]['blockend']
+            )
 
         #TODO: UUID POOL
 
@@ -108,7 +116,8 @@ class UcsWorker(FlexWorker):
         """ QOS """
 
         newfxns.setGlobalQosPolicy(self.config['qos'])
-        for classname, hostcontrol in self.config['qos']['classes'].iteritems():
+        for classname, hostcontrol in self.config['qos']['classes'] \
+                .iteritems():
             newfxns.createQosPolicy(classname, hostcontrol)
 
         """ ORG-SPECIFIC POLICIES """
@@ -122,28 +131,31 @@ class UcsWorker(FlexWorker):
         """ VNIC TEMPLATES """
 
         # Create vNIC Templates
-        for vnicprefix, vlangroup in self.config['ucs']['vlangroups'].iteritems():
+        for vnicprefix, vlangroup in self.config['ucs']['vlangroups'] \
+                .iteritems():
+
             for fabricid in self.FABRICS:
-                #TODO: that weird "return as list" issue (resulting in the list index below)
+
                 vnic = newfxns.createVnicTemplate(vnicprefix, fabricid)[0]
-                for vlanid, vlanname in self.config['vlans'][vlangroup].iteritems():
+                for vlanid, vlanname in self.config['vlans'][vlangroup] \
+                        .iteritems():
+
                     newfxns.createVnicVlan(vnic, vlanname)
-        
+
         templates = ["ESX-PROD-A", "ESX-PROD-B"]
 
         for template in templates:
 
             vnic = newfxns.getVnicTemplate(template)
 
-            #TODO: Need to check here (and anywhere else you're doing getChild) to make sure the "vnic" array has members (otherwise your search is bad)
-
             #Remove any VLANs on this vNIC Template that are not in the config
-            for vlanMo in newfxns.getVnicVlans(vnic[0]).OutConfigs.GetChild():      #TODO: that weird "return as list" issue
-                
+            for vlanMo in newfxns.getVnicVlans(vnic[0]).OutConfigs.GetChild():
+
                 #TODO: This is a pretty dirty hack, see if you can do something better
                 vlanName = vlanMo.Dn[vlanMo.Dn.index("/if-") + 4:]
 
-                #Delete all VLANs from the vNIC Template that aren't in the "production" group of the configuration
+                # Delete all VLANs from the vNIC Template that aren't
+                # in the "production" group of the configuration
                 if vlanName in self.config['vlans']['prod'].values():
                     pass
                 else:
@@ -153,11 +165,12 @@ class UcsWorker(FlexWorker):
 
         # Create vHBA Templates
         for fabricid in self.FABRICS:
-            #TODO: that weird "return as list" issue (resulting in the list index below)
             vhba = newfxns.createVhbaTemplate(fabricid)[0]
 
             # No removal method necessary; will override existing VSAN setting
-            for vsanid, vsanname in self.config['vsans'][fabricid.lower()].iteritems():
+            for vsanid, vsanname in self.config['vsans'][fabricid.lower()] \
+                    .iteritems():
+
                 newfxns.createVhbaVsan(vhba, vsanname)
 
         """ SP TEMPLATES """
@@ -177,7 +190,7 @@ class UcsWorker(FlexWorker):
             "ESX-VHBA-A",
             "ESX-VHBA-B"
         ]
-        
+
         #Create vNIC VCON assignments
         for vnic in vnics:
             transport = "ethernet"
@@ -194,8 +207,8 @@ class UcsWorker(FlexWorker):
         newfxns.setWWNNPool(spt[0], "ESXi-WWNN")
         newfxns.setPowerState(spt[0], "admin-up")
 
-        newfxns.spawnZerglings(
-                spt[0], 
-                self.config['ucs']['spprefix'], 
-                self.config['ucs']['numbertospawn']
-            )
+        # newfxns.spawnZerglings(
+        #         spt[0],
+        #         self.config['ucs']['spprefix'],
+        #         self.config['ucs']['numbertospawn']
+        #     )
