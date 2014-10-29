@@ -24,10 +24,10 @@ from UcsSdk import FilterFilter, EqFilter, WcardFilter, NeFilter
 class NewUcsFunctions(object):
     """ A working class to help ease how we work with UCS objects """
 
-    #TODO: Currently requiring org info at start of
+    # TODO: Currently requiring org info at start of
     def __init__(self, handle, orgName):
 
-        #TODO: need to have a check for valid handle i.e. logged in
+        # TODO: need to have a check for valid handle i.e. logged in
         self.handle = handle
 
         #Some functions refer directly to root (i.e. VLANs)
@@ -503,7 +503,7 @@ class NewUcsFunctions(object):
                     "StatsPolicyName": "default",
                     "TemplType": "updating-template",
                     "PolicyOwner": "local",
-                    "Mtu": "9000", #TODO: Configurable item?
+                    "Mtu": "9000",  # TODO: Configurable item?
                     "PinToGroupName": "",
 
                     "Dn": self.orgNameDN + "lan-conn-templ-" +
@@ -528,8 +528,6 @@ class NewUcsFunctions(object):
         inFilter.AddChild(wcardFilter)
 
         return self.handle.ConfigResolveClass("vnicEtherIf", inFilter=inFilter)
-        #TODO: See if you can figure out how to filter by DN,
-        # and eliminate the filtering done at the ucs worker
 
     def createVnicVlan(self, vnic, vlanname):
         #TODO: Only works with vNIC templates, presently
@@ -647,14 +645,14 @@ class NewUcsFunctions(object):
                 "DynamicConPolicyName": "",
                 "Type": "updating-template",
                 "VconProfileName": "",
-                "IdentPoolName": "ESXi-UUID",# TODO: Not implemented yet
+                "IdentPoolName": "ESXi-UUID",  # TODO: Not implemented yet
                 "HostFwPolicyName": "HOST_FW_PKG",
                 "ExtIPPoolName": "ext-mgmt",
                 "Uuid": "0",
                 "ExtIPState": "pooled",
                 "PowerPolicyName": "default",
                 "Dn": self.orgNameDN + "ls-" + sptname,
-                "BootPolicyName": "BFS_POLICY",# TODO: Not implemented yet
+                "BootPolicyName": "BFS_POLICY",  # TODO: Not implemented yet
                 "PolicyOwner": "local",
                 "StatsPolicyName": "default"
             })
@@ -689,7 +687,7 @@ class NewUcsFunctions(object):
                 "PinToGroupName": "",
                 "StatsPolicyName": "default",
                 "AdaptorProfileName": "VMWare",
-                "SwitchId": vnicname[-1:], #TODO: kind of a hack right now
+                "SwitchId": vnicname[-1:],  # TODO: kind of a hack right now
                 "Dn": spt.Dn + "/ether-" + vnicname,
                 "Addr": "derived",
                 "NwTemplName": vnicname
@@ -707,7 +705,7 @@ class NewUcsFunctions(object):
                 "PersBind": "disabled",
                 "StatsPolicyName": "default",
                 "AdaptorProfileName": "VMWare",
-                "SwitchId": vhbaname[-1:], #TODO: kind of a hack right now
+                "SwitchId": vhbaname[-1:],  # TODO: kind of a hack right now
                 "Dn": spt.Dn + "/fc-" + vhbaname,
                 "Addr": "derived",
                 "NwTemplName": vhbaname

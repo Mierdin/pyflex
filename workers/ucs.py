@@ -36,7 +36,7 @@ class UcsWorker(FlexWorker):
             ucsauth['pass']
         )
 
-        newfxns = NewUcsFunctions(handle, self.config['general']['org'])
+        newfxns = NewUcsFunctions(handle, self.config['ucs']['org'])
 
         """ VLANS """
         vlans = {}
