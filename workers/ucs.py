@@ -6,10 +6,13 @@
     when it should, will be handled here.
 
 """
-from worker import FlexWorker
-#from functions.functions_ucs import UcsFunctions
-from functions.newfunctions_ucs import NewUcsFunctions
+
+#Import UCS Packages
 from UcsSdk import UcsHandle
+
+#Import PyFlex Dependencies
+from worker import FlexWorker
+from functions.newfunctions_ucs import NewUcsFunctions
 
 
 class UcsWorker(FlexWorker):
