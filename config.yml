@@ -7,11 +7,10 @@
 #
 # Refer to the README for more details on how to use this tool.
 
-# Sections
+# Workers
 #
 # Use this section to determine which portions of the infrastructure are built
-# (Currently unimplemented)
-sections:
+workers:
     - ucs
 #    - netapp
 #    - nexus
@@ -24,10 +23,9 @@ sections:
 # Enter authentication information here
 auth:
     ucs:
-        host: 192.168.14.6
-        #host: 192.168.111.137
-        user: "admin"
-        pass: "Changeme123!"
+        host: 10.12.0.97
+        user: "config"
+        pass: "config"
     netapp:
         host: 10.12.0.70
         user: admin
@@ -49,7 +47,6 @@ auth:
 #
 # Define general configuration options hee
 general:
-    org: IDC_1 #Define org name here, or if no suborg, write "root"
     mgmtgw: 10.1.1.1
     ntp: 
         - 192.168.11.10
@@ -61,6 +58,7 @@ general:
 #
 # Configuration items specific to UCS
 ucs:
+    org: TEST_ORG #Define org name here, or if no suborg, write "root"
     pools:
         mac:
             A:
@@ -82,11 +80,15 @@ ucs:
         uuid:
                 blockbegin: 0000-000000000001
                 blockend: 0000-000000000100
-    links: 4-link #How many connections will be used on a chassis IOM? This will be strictly enforced via the global chassis discovery policy
-                # options are 1-link, 2-link, 4-link, 8-link, or platform-max
+    links: 4-link #Links per chassis; options are 1-link, 2-link, 4-link, 8-link, or platform-max
     sptname: ESXi_SPT
     spprefix: ESXi-
+    vnicprefix: ESXi-
     numbertospawn: 4
+    vlangroups: #A temporary measure to map the groups of VLANs to the vNICs they belong to.
+        ESX-MGMT: mgmt
+        ESX-NFS: nfs
+        ESX-PROD: prod
 
 # VLANS
 #
@@ -96,18 +98,20 @@ ucs:
 # Format is a key/value pair, where VLAN ID is the key, and name/description is
 # the corresponding value.
 #
-# As of now, the use of forward slashes is not allowed, as it currently messes with MO paths (TODO: Fix this)
+# As of now, the use of forward slashes is not allowed, as it currently messes with MO paths 
 #
-# Also it is very important to provide a Unique name/description for each VLAN ID provided. UCS currently uses this value to determine VLAN membership. It's also just good sense.
+# Also it is very important to provide a Unique name/description for each VLAN ID provided. 
+# UCS currently uses this value to determine VLAN membership. It's also just good sense.
 vlans:
     mgmt:
         10: ESX_MGMT_172.16.10.0
+        20: ESX_VMOT_172.16.20.0
     nfs:
         99: NFS_172.16.99.0
     prod:
-        50: Existing_172.25.20.0
         60: Server1_172.16.60.0
         70: Server2_172.16.70.0
+
 
 # VSANS
 #
@@ -118,40 +122,47 @@ vlans:
 # the corresponding value.
 vsans:
     a:
-        110: FCoE_Fabric_A
+        235: FCoE_Fabric_A
     b:
-        120: FCoE_Fabric_B
+        236: FCoE_Fabric_B
 
 # QOS
 #
 # Specifies some parameters to be used in a standard MQC-style configuration
 qos:
-    defaultmtu: 1500 # The MTU to be used on class-default 
-                 # (unclassified) traffic
+    defaultmtu: 1500 # The MTU to be used on class-default  (unclassified) traffic
+    classes:
+        Gold: none
+        Silver: none
+        Bronze: none
+        Best-Effort: full
 
-# PORTS
-#
-# Specifies general configuration settings for individual ports. Many ports 
-# receive more specific configuration as part of the "feature installation"
-# option in future versions, but this is a handy way to make en masse changes
-# first.
-ports:
-    trunks:
-        "e1/1-48"
-        #TODO: need to make this not a simple string - probably a list
 
-# STORAGE
-#
-# Storage configuration
-storage: #revisit this - might not need to expose all of these
-    var_na_portset: fcoe_pset_1
-    var_na_vserver: FC_VS1
-    var_na_vserverRootVol: = FC_VS1_root
-    var_na_bootVol: /vol/FC_BootVol1/ #Needs to be of this format, including the forward slashes. LUN will be appended without any slashes
-    targets:
-        A:
-            - "50:00:00:00:00:00:00:00"
-            - "50:00:00:00:00:00:00:01"
-        B:
-            - "50:00:00:00:00:00:00:02"
-            - "50:00:00:00:00:00:00:03"
+### BELOW IS UNIMPLEMENTED ###
+
+# # PORTS
+# #
+# # Specifies general configuration settings for individual ports. Many ports 
+# # receive more specific configuration as part of the "feature installation"
+# # option in future versions, but this is a handy way to make en masse changes
+# # first.
+# ports:
+#     trunks:
+#         "e1/1-48"
+#         #TODO: need to make this not a simple string - probably a list
+
+# # STORAGE
+# #
+# # Storage configuration
+# storage: #revisit this - might not need to expose all of these
+#     var_na_portset: fcoe_pset_1
+#     var_na_vserver: FC_VS1
+#     var_na_vserverRootVol: = FC_VS1_root
+#     var_na_bootVol: /vol/FC_BootVol1/ #Needs to be of this format, including the forward slashes. LUN will be appended without any slashes
+#     targets:
+#         A:
+#             - "50:00:00:00:00:00:00:00"
+#             - "50:00:00:00:00:00:00:01"
+#         B:
+#             - "50:00:00:00:00:00:00:02"
+#             - "50:00:00:00:00:00:00:03"

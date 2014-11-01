@@ -9,6 +9,7 @@ import logging
 from flexconfig import FlexConfig
 from workers.ucs import UcsWorker
 
+
 class PyFlex:
     """ Main PyFlex class. Primarily used to
         spawn workers and import configurations
@@ -22,9 +23,17 @@ class PyFlex:
 
     def start(self):
         """ Creates new workers and starts them """
-        this_ucs = UcsWorker(self.config)
 
-        this_ucs.startworker()
+        for worker in self.config['workers']:
+            if worker == 'ucs':
+                this_ucs = UcsWorker(self.config)
+                this_ucs.startworker()
+            elif worker == 'nexus':
+                pass
+            elif worker == 'netapp':
+                pass
+            elif worker == 'vsphere':
+                pass
 
     def end(self):
         """ Ends worker processes """
