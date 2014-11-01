@@ -89,6 +89,15 @@ class UcsWorker(FlexWorker):
             for vsanid, vsanname in self.config['vsans'][fabric].iteritems():
                 newfxns.createVSAN(fabric.upper(), vsanid, vsanname)
 
+        """ IP KVM POOL """
+
+        newfxns.createIpPool(
+            self.config['ucs']['pools']['ip']['start'],
+            self.config['ucs']['pools']['ip']['end'],
+            self.config['ucs']['pools']['ip']['mask'],
+            self.config['ucs']['pools']['ip']['gw']
+        )
+
         """ MAC POOLS """
 
         #Pull MAC Pool Configuration Info

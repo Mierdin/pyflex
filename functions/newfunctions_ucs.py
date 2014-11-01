@@ -174,6 +174,46 @@ class NewUcsFunctions(object):
             print "VSAN " + str(mo.Id) + ": " + mo.Name + \
                 " already deleted -- " + e.errorMsg
 
+    ##############
+    #  IP POOL  #
+    ##############
+
+    def getIpPool(self, poolname):
+        pass
+
+    def createIpPool(self, blockstart, blockend, mask, gateway):
+
+        #Create Mac Pool Object
+        try:
+            return self.handle.AddManagedObject(self.org, "ippoolPool", {
+                "Descr": "IP KVM Pool",
+                "Name": "IPKVM-POOL",
+                "AssignmentOrder": "sequential",
+                "PolicyOwner": "local",
+                "Dn": self.orgNameDN + "ip-pool-IPKVM-POOL"
+            })
+        except UcsException:
+            print "IP Pool IPKVM-POOL already exists"
+            return self.handle.GetManagedObject(None, None, {
+                "Dn": self.orgNameDN + "ip-pool-IPKVM-POOL"
+            })
+
+        #Create Mac Pool Block
+        try:
+            self.handle.AddManagedObject(mo, "ippoolBlock", {
+                "From": blockstart,
+                "To": blockend,
+                "subnet": mask,
+                "defGw": gateway,
+                "Dn": self.orgNameDN + "ip-pool-IPKVM-POOL" +
+                "/block-" + blockstart + "-" + blockend
+            })
+        except UcsException:
+            print "IP Pool block IPKVM-POOL already exists"
+
+    def removeIpPool(self, ippool):
+        pass
+
     ###############
     #  MAC POOLS  #
     ###############
@@ -646,7 +686,7 @@ class NewUcsFunctions(object):
                 "VconProfileName": "",
                 "IdentPoolName": "ESXi-UUID",  # TODO: Not implemented yet
                 "HostFwPolicyName": "HOST_FW_PKG",
-                "ExtIPPoolName": "ext-mgmt",
+                "ExtIPPoolName": "IPKVM-POOL",
                 "Uuid": "0",
                 "ExtIPState": "pooled",
                 "PowerPolicyName": "default",

@@ -60,6 +60,11 @@ general:
 ucs:
     org: TEST_ORG #Define org name here, or if no suborg, write "root"
     pools:
+        ip:
+            start: 10.15.0.50
+            end: 10.15.0.100
+            mask: 255.255.255.0
+            gw: 10.15.0.1
         mac:
             A:
                 blockbegin: 00:25:B5:00:A0:00
