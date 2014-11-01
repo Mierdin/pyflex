@@ -107,7 +107,7 @@ class NewUcsFunctions(object):
             print "Created VLAN " + str(vlanid) + ": " + vlanname
         except UcsException as e:
             print "VLAN " + str(vlanid) + ": " + vlanname + \
-                " already exists -- " + e.errorMsg
+                " already exists -- " + e.errorDescr
 
     def removeVLAN(self, mo):
         #TODO: in the usual workflow, you're retrieving the VLAN objects
@@ -159,7 +159,7 @@ class NewUcsFunctions(object):
             print "Created VSAN " + str(vsanid) + ": " + vsanname
         except UcsException as e:
             print "VSAN " + str(vsanid) + ": " + vsanname + \
-                " already exists -- " + e.errorMsg
+                " already exists -- " + e.errorDescr
 
     def removeVSAN(self, mo):
         try:
@@ -571,7 +571,7 @@ class NewUcsFunctions(object):
 
     def createVhbaTemplate(self, fabricID):
         try:
-            mo = self.handle.AddManagedObject(self.org, "vnicSanConnTempl", {
+            return self.handle.AddManagedObject(self.org, "vnicSanConnTempl", {
                 "Name": "ESX-VHBA-" + fabricID,
                 "Descr": "ESXi Servers - vHBA Fabric " + fabricID,
                 "SwitchId": fabricID,
@@ -589,11 +589,10 @@ class NewUcsFunctions(object):
             })
         except UcsException:
             print "vHBA Template 'ESX-VHBA-" + fabricID + "' already exists"
-            mo = self.handle.GetManagedObject(None, None, {
+            return self.handle.GetManagedObject(None, None, {
                 "Dn": self.orgNameDN + "san-conn-templ-ESX-VHBA-" +
                 fabricID
             })
-        return mo
 
     def removeVhbaTemplate(self, templatename):
         pass
@@ -693,7 +692,7 @@ class NewUcsFunctions(object):
                 "NwTemplName": vnicname
             })
         except UcsException as e:
-            print "VNIC MAP - vnic already mapped to SPT -- " + e.errorMsg
+            print "VNIC MAP - vnic already mapped to SPT -- " + e.errorDescr
 
     def addVhbaFromTemplate(self, spt, vhbaname):
         try:
@@ -711,7 +710,7 @@ class NewUcsFunctions(object):
                 "NwTemplName": vhbaname
             })
         except UcsException as e:
-            print "VHBA MAP - vhba already mapped to SPT -- " + e.errorMsg
+            print "VHBA MAP - vhba already mapped to SPT -- " + e.errorDescr
 
     def setWWNNPool(self, spt, poolname):
         try:

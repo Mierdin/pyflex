@@ -39,47 +39,55 @@ class UcsWorker(FlexWorker):
         newfxns = NewUcsFunctions(handle, self.config['ucs']['org'])
 
         """ VLANS """
+
+        #Temporary dict, to take the groups out of the picture temporarily
+        #This is a good example of why you need to rethink this mapping
         vlans = {}
 
         #Get a list of all VLANs, regardless of group
         for group in self.config['vlans']:
 
-            #Exclusing VLANs used for FCoE
-            if group != 'storage':
+            #Add to temporary dict
+            for vlanid, vlanname in self.config['vlans'][group] \
+                    .iteritems():
+                vlans[str(vlanid)] = vlanname
 
-                #TODO: This is really ugly because of the VLAN layout in the
-                #config file. Maybe need to figure out a way to restructure it
-                for vlanid, vlanname in self.config['vlans'][group] \
-                        .iteritems():
-
-                    vlans[vlanid] = vlanname
-
-        #Add all VLANs in the list
-        for vlanid, vlanname in vlans.iteritems():
-            newfxns.createVLAN(vlanid, vlanname)
-
-        #Remove any VLANs within UCS that are not in the config
+        #Remove any VLANs within UCS that are not in temporary dict
         for mo in newfxns.getVLANs().OutConfigs.GetChild():
-            if mo.Name in vlans.values():
+            if mo.Id in vlans.keys() and vlans[mo.Id] == mo.Name:
                 pass
             else:
                 newfxns.removeVLAN(mo)
 
+        #Add all VLANs in the temporary dict to UCS
+        for vlanid, vlanname in vlans.iteritems():
+            newfxns.createVLAN(vlanid, vlanname)
+
         """ VSANS """
 
-        #Create VSANs from the list
-        for vsanid, vsanname in self.config['vsans']['a'].iteritems():
-            newfxns.createVSAN("A", vsanid, vsanname)
-        for vsanid, vsanname in self.config['vsans']['b'].iteritems():
-            newfxns.createVSAN("B", vsanid, vsanname)
+        #Temporary dict, to take the groups out of the picture temporarily
+        #This is a good example of why you need to rethink this mapping
+        vsans = {}
 
-        #Remove any VSANs within UCS that are not in the config
+        #Get a list of all VLANs, regardless of group
+        for fabric in self.config['vsans']:
+
+            #Add to temporary dict
+            for vsanid, vsanname in self.config['vsans'][fabric] \
+                    .iteritems():
+                vsans[str(vsanid)] = vsanname
+
+        #Remove any VSANs within UCS that are not in temporary dict
         for mo in newfxns.getVSANs().OutConfigs.GetChild():
-            if mo.Name in self.config['vsans']['a'].values() or \
-                    mo.Name in self.config['vsans']['b'].values():
+            if mo.Id in vsans.keys() and vsans[mo.Id] == mo.Name:
                 pass
             else:
                 newfxns.removeVSAN(mo)
+
+        #Add all VSANs in the temporary dict to UCS
+        for fabric in ['a', 'b']:
+            for vsanid, vsanname in self.config['vsans'][fabric].iteritems():
+                newfxns.createVSAN(fabric.upper(), vsanid, vsanname)
 
         """ MAC POOLS """
 
@@ -139,30 +147,24 @@ class UcsWorker(FlexWorker):
 
             for fabricid in self.FABRICS:
 
+                #Create vNIC Template
                 vnic = newfxns.createVnicTemplate(vnicprefix, fabricid)[0]
+
+                #Remove any VLANs on this emplate that are not in the config
+                for vlanMo in newfxns.getVnicVlans(vnic).OutConfigs \
+                        .GetChild():
+
+                    #Have to use Name and values - no "Id" parameter
+                    if vlanMo.Name in self.config['vlans'][vlangroup].values():
+                        pass
+                    else:
+                        newfxns.removeVnicVlan(vnic, vlanMo.Name)
+
+                #Add VLANs from configuration to this vNIC
                 for vlanid, vlanname in self.config['vlans'][vlangroup] \
                         .iteritems():
 
                     newfxns.createVnicVlan(vnic, vlanname)
-
-        templates = ["ESX-PROD-A", "ESX-PROD-B"]
-
-        for template in templates:
-
-            vnic = newfxns.getVnicTemplate(template)
-
-            #Remove any VLANs on this vNIC Template that are not in the config
-            for vlanMo in newfxns.getVnicVlans(vnic[0]).OutConfigs.GetChild():
-
-                #TODO: This is a pretty dirty hack, see if you can do something better
-                vlanName = vlanMo.Dn[vlanMo.Dn.index("/if-") + 4:]
-
-                # Delete all VLANs from the vNIC Template that aren't
-                # in the "production" group of the configuration
-                if vlanName in self.config['vlans']['prod'].values():
-                    pass
-                else:
-                    newfxns.removeVnicVlan(vnic[0], vlanName)
 
         """ VHBA TEMPLATES """
 
