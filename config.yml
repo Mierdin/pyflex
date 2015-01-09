@@ -85,6 +85,10 @@ ucs:
         uuid:
                 blockbegin: 0000-200000000001
                 blockend: 0000-200000000100
+
+# TODO: Need to remove the resource pools section. No one cares about these, they should be hidden.
+
+
     links: 4-link #Links per chassis; options are 1-link, 2-link, 4-link, 8-link, or platform-max
     sptname: ESXi_SPT
     spprefix: ESXi-

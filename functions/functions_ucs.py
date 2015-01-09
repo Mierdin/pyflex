@@ -10,9 +10,13 @@
     with proper code standards, etc. Consider this file an ongoing
     work-in-progress.
 
+    PLEASE ASSUME THIS FILE IS NOT BEING USED OR MAINTAINED. The new
+    file is newfunctions_ucs.py
+
 """
 
 from UcsSdk import *
+
 
 class UcsFunctions:
     """ Class that contains all functions for Cisco UCS """

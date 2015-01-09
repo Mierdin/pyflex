@@ -20,6 +20,12 @@ Simply run
 
 to build the library and automatically install dependencies.
 
+# Benefits
+- (roadmap) Built to be idempotent - run once, multiple times, whatever. Your config will be made true.
+- Engineers don't need to worry about all the nerd knobs. Best practices are implemented in code. Wherever possible, configuration data is pulled from existing infrastructure, rather than a human being.
+- Documentation is simplified. We can create templates, and just insert values. No snowflakes.
+- (roadmap) Centralized administration of multiple domains without a bloated, stateful application like UCS Central. Why create an unnecessary, always-on point of management you don't need?
+
 # Notes for Running on Windows
 
 If you have issues with pycrypto on Windows while building this library, just download the pre-built binaries here:

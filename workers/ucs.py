@@ -5,6 +5,11 @@
     work of deleting config that shouldn't be there, or creating it
     when it should, will be handled here.
 
+    Think of the functions file(s) as just that - containers of functions.
+    This file is where those functions are called, and where you determine
+    your workflow (i.e. checking for existence of a resource before deleting
+    it)
+
 """
 
 #Import UCS Packages
