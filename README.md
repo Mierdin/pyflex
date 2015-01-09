@@ -1,6 +1,3 @@
-pyflex
-==============
-
 # About PyFlex
 
 PyFlex is a tool for deploying and otherwise configuring a Flexpod. 

@@ -23,7 +23,7 @@ workers:
 # Enter authentication information here
 auth:
     ucs:
-        host: 10.12.0.97
+        host: 10.12.0.98
         user: "config"
         pass: "config"
     netapp:
@@ -58,7 +58,7 @@ general:
 #
 # Configuration items specific to UCS
 ucs:
-    org: TEST_ORG #Define org name here, or if no suborg, write "root"
+    org: POD1 #Define org name here, or if no suborg, write "root"
     pools:
         ip:
             start: 10.15.0.50
@@ -67,29 +67,29 @@ ucs:
             gw: 10.15.0.1
         mac:
             A:
-                blockbegin: 00:25:B5:00:A0:00
-                blockend: 00:25:B5:00:A1:FF
+                blockbegin: 00:25:B5:02:A0:00
+                blockend: 00:25:B5:02:A1:FF
             B:
-                blockbegin: 00:25:B5:00:B0:00
-                blockend: 00:25:B5:00:B1:FF
+                blockbegin: 00:25:B5:02:B0:00
+                blockend: 00:25:B5:02:B1:FF
         wwpn:
             A:
-                blockbegin: 20:00:00:25:B5:00:A0:00
-                blockend: 20:00:00:25:B5:00:A1:FF
+                blockbegin: 20:00:00:25:B5:02:A0:00
+                blockend: 20:00:00:25:B5:02:A1:FF
             B:
-                blockbegin: 20:00:00:25:B5:00:B0:00
-                blockend: 20:00:00:25:B5:00:B1:FF
+                blockbegin: 20:00:00:25:B5:02:B0:00
+                blockend: 20:00:00:25:B5:02:B1:FF
         wwnn:
-                blockbegin: 20:00:00:25:B5:00:F0:00
-                blockend: 20:00:00:25:B5:00:F1:FF
+                blockbegin: 20:00:00:25:B5:02:F0:00
+                blockend: 20:00:00:25:B5:02:F1:FF
         uuid:
-                blockbegin: 0000-000000000001
-                blockend: 0000-000000000100
+                blockbegin: 0000-200000000001
+                blockend: 0000-200000000100
     links: 4-link #Links per chassis; options are 1-link, 2-link, 4-link, 8-link, or platform-max
     sptname: ESXi_SPT
     spprefix: ESXi-
     vnicprefix: ESXi-
-    numbertospawn: 4
+    numbertospawn: 9
     vlangroups: #A temporary measure to map the groups of VLANs to the vNICs they belong to.
         ESX-MGMT: mgmt
         ESX-NFS: nfs
