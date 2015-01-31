@@ -27,7 +27,7 @@ setup(name='pyflex',
                     "PyYAML>=3.10",
                     "configobj>=5.0.5"
                     ],
-      license="(fill in license here)",
+      license="apache",
       platforms=["Linux; OS X; Windows"],
       keywords=('Flexpod'),
       classifiers=[
